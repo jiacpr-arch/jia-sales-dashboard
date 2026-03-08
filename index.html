@@ -15,7 +15,7 @@
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 a{color:var(--accent);text-decoration:none}
 
-/* ââ Login ââ */
+/* ── Login ── */
 .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .login-box{background:var(--card);border-radius:20px;padding:40px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .login-box h1{font-size:2rem;margin-bottom:8px}
@@ -33,7 +33,7 @@ a{color:var(--accent);text-decoration:none}
 .btn-danger{background:var(--accent2);color:#fff}
 .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}
 
-/* ââ App Shell ââ */
+/* ── App Shell ── */
 .app{display:none}
 .topbar{background:var(--card);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px}
 .topbar-left{display:flex;align-items:center;gap:16px}
@@ -45,7 +45,7 @@ a{color:var(--accent);text-decoration:none}
 #refreshBtn:hover{background:var(--border)}
 #logoutBtn{background:transparent;border:1px solid var(--border);color:var(--text2);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.85rem}
 
-/* ââ Stats Cards ââ */
+/* ── Stats Cards ── */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;padding:24px}
 .stat-card{background:var(--card);border-radius:16px;padding:20px;text-align:center;border:1px solid transparent;transition:.2s}
 .stat-card:hover{border-color:var(--accent);transform:translateY(-2px)}
@@ -58,7 +58,7 @@ a{color:var(--accent);text-decoration:none}
 .stat-purple .num{color:var(--purple)}
 .stat-blue .num{color:var(--blue)}
 
-/* ââ Staff Performance (manager) ââ */
+/* ── Staff Performance (manager) ── */
 .staff-section{padding:0 24px 24px}
 .staff-section h3{margin-bottom:12px;font-size:1.1rem}
 .staff-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
@@ -68,7 +68,7 @@ a{color:var(--accent);text-decoration:none}
 .staff-card .staff-stats span{font-size:.8rem;color:var(--text2)}
 .staff-card .staff-stats b{color:var(--text)}
 
-/* ââ Filters & Table ââ */
+/* ── Filters & Table ── */
 .controls{padding:0 24px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .controls input,.controls select{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.9rem;outline:none}
 .controls input{min-width:200px;flex:1}
@@ -91,7 +91,7 @@ tr:hover td{background:rgba(245,158,11,.04)}
 .clickable{cursor:pointer;color:var(--blue);text-decoration:underline}
 .clickable:hover{color:var(--accent)}
 
-/* ââ Modal ââ */
+/* ── Modal ── */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:16px}
 .modal-bg.active{display:flex}
 .modal{background:var(--card);border-radius:20px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:28px;position:relative}
@@ -107,22 +107,22 @@ tr:hover td{background:rgba(245,158,11,.04)}
 .info-grid .info-item{font-size:.85rem}
 .info-grid .info-item span{color:var(--text2)}
 
-/* ââ Status Grid ââ */
+/* ── Status Grid ── */
 .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .status-option{padding:10px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-size:.85rem;transition:.2s}
 .status-option:hover{border-color:var(--accent);background:rgba(245,158,11,.05)}
 .status-option.active{border-color:var(--accent);background:rgba(245,158,11,.1)}
 
-/* ââ Toast ââ */
+/* ── Toast ── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:12px 24px;border-radius:12px;font-weight:600;z-index:200;display:none;animation:fadeInUp .3s}
 @keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-/* ââ Loading ââ */
+/* ── Loading ── */
 .loading{text-align:center;padding:60px;color:var(--text2)}
 .spinner{display:inline-block;width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ââ Responsive ââ */
+/* ── Responsive ── */
 @media(max-width:768px){
   .stats{grid-template-columns:repeat(3,1fr);gap:10px;padding:16px}
   .stat-card{padding:14px}
@@ -137,32 +137,32 @@ tr:hover td{background:rgba(245,158,11,.04)}
 </head>
 <body>
 
-<!-- âââââââ LOGIN SCREEN âââââââ -->
+<!-- ═══════ LOGIN SCREEN ═══════ -->
 <div class="login-wrap" id="loginScreen">
   <div class="login-box">
-    <h1>ð JIA Dashboard</h1>
+    <h1>📊 JIA Dashboard</h1>
     <p>Sales Pipeline Management</p>
-    <input type="text" id="nameInput" placeholder="à¸à¸·à¹à¸­à¸à¸­à¸à¸à¸¸à¸ (à¹à¸à¹à¸ à¹à¸à¸, à¸à¸­à¸ª)" autofocus>
+    <input type="text" id="nameInput" placeholder="ชื่อของคุณ (เช่น แนน, บอส)" autofocus>
     <select id="roleInput">
-      <option value="manager">ð à¸à¸¹à¹à¸à¸±à¸à¸à¸²à¸£ â à¸à¸¹à¸ à¸²à¸à¸£à¸§à¸¡à¸à¸±à¹à¸à¸«à¸¡à¸</option>
-      <option value="sales">ð¼ à¹à¸à¸¥à¸¥à¹ â à¸à¸±à¸à¸à¸²à¸£à¸¥à¸µà¸à¸à¸­à¸à¸à¸±à¸</option>
+      <option value="manager">👔 ผู้จัดการ — ดูภาพรวมทั้งหมด</option>
+      <option value="sales">💼 เซลล์ — จัดการลีดของฉัน</option>
     </select>
-    <button class="btn btn-primary" onclick="doLogin()">à¹à¸à¹à¸²à¸ªà¸¹à¹à¸£à¸°à¸à¸ ð</button>
+    <button class="btn btn-primary" onclick="doLogin()">เข้าสู่ระบบ 🚀</button>
   </div>
 </div>
 
-<!-- âââââââ MAIN APP âââââââ -->
+<!-- ═══════ MAIN APP ═══════ -->
 <div class="app" id="app">
 
   <!-- Top Bar -->
   <div class="topbar">
     <div class="topbar-left">
-      <h2>ð JIA Dashboard</h2>
-      <span class="user-info">ð¤ <b id="displayName"></b> Â· <span id="displayRole"></span></span>
+      <h2>📊 JIA Dashboard</h2>
+      <span class="user-info">👤 <b id="displayName"></b> · <span id="displayRole"></span></span>
     </div>
     <div class="topbar-right">
-      <button id="refreshBtn" onclick="loadData()">ð à¸£à¸µà¹à¸à¸£à¸</button>
-      <button id="logoutBtn" onclick="doLogout()">à¸­à¸­à¸à¸à¸²à¸à¸£à¸°à¸à¸</button>
+      <button id="refreshBtn" onclick="loadData()">🔄 รีเฟรช</button>
+      <button id="logoutBtn" onclick="doLogout()">ออกจากระบบ</button>
     </div>
   </div>
 
@@ -171,33 +171,33 @@ tr:hover td{background:rgba(245,158,11,.04)}
 
   <!-- Staff Performance (Manager only) -->
   <div class="staff-section" id="staffSection" style="display:none">
-    <h3>ð à¸à¸¥à¸à¸²à¸à¹à¸à¸¥à¸¥à¹à¹à¸à¹à¸¥à¸°à¸à¸</h3>
+    <h3>📈 ผลงานเซลล์แต่ละคน</h3>
     <div class="staff-grid" id="staffGrid"></div>
   </div>
 
   <!-- Filters -->
   <div class="controls">
-    <input type="text" id="searchInput" placeholder="ð à¸à¹à¸à¸«à¸²à¸à¸·à¹à¸­, à¹à¸à¸­à¸£à¹à¹à¸à¸£..." oninput="renderTable()">
+    <input type="text" id="searchInput" placeholder="🔍 ค้นหาชื่อ, เบอร์โทร..." oninput="renderTable()">
     <select id="filterPriority" onchange="renderTable()">
-      <option value="">à¸à¸¸à¸ Priority</option>
-      <option value="hot">ð¥ HOT</option>
-      <option value="warm">ð¤ Warm</option>
-      <option value="cold">âï¸ Cold</option>
+      <option value="">ทุก Priority</option>
+      <option value="hot">🔥 HOT</option>
+      <option value="warm">🌤 Warm</option>
+      <option value="cold">❄️ Cold</option>
     </select>
     <select id="filterStatus" onchange="renderTable()">
-      <option value="">à¸à¸¸à¸à¸ªà¸à¸²à¸à¸°</option>
-      <option value="à¸¢à¸±à¸à¹à¸¡à¹à¹à¸à¹à¸à¸´à¸à¸à¹à¸­">ð à¸¢à¸±à¸à¹à¸¡à¹à¹à¸à¹à¸à¸´à¸à¸à¹à¸­</option>
-      <option value="à¹à¸¡à¹à¸£à¸±à¸à¸ªà¸²à¸¢">ð à¹à¸¡à¹à¸£à¸±à¸à¸ªà¸²à¸¢</option>
-      <option value="à¸à¸¹à¸à¸à¸¸à¸¢à¹à¸¥à¹à¸§">ð¬ à¸à¸¹à¸à¸à¸¸à¸¢à¹à¸¥à¹à¸§</option>
-      <option value="à¸à¸±à¸à¸«à¸¡à¸²à¸¢à¹à¸¥à¹à¸§">ð à¸à¸±à¸à¸«à¸¡à¸²à¸¢à¹à¸¥à¹à¸§</option>
-      <option value="à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢">â à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢</option>
-      <option value="à¹à¸¡à¹à¸ªà¸à¹à¸">â à¹à¸¡à¹à¸ªà¸à¹à¸</option>
+      <option value="">ทุกสถานะ</option>
+      <option value="ยังไม่ได้ติดต่อ">🆕 ยังไม่ได้ติดต่อ</option>
+      <option value="ไม่รับสาย">📞 ไม่รับสาย</option>
+      <option value="พูดคุยแล้ว">💬 พูดคุยแล้ว</option>
+      <option value="นัดหมายแล้ว">📅 นัดหมายแล้ว</option>
+      <option value="ปิดการขาย">✅ ปิดการขาย</option>
+      <option value="ไม่สนใจ">❌ ไม่สนใจ</option>
     </select>
     <select id="filterLock" onchange="renderTable()">
-      <option value="">à¸à¸¸à¸à¸ªà¸à¸²à¸à¸°à¸à¸­à¸</option>
-      <option value="locked">ð à¸à¸­à¸à¹à¸¥à¹à¸§</option>
-      <option value="unlocked">ð à¸§à¹à¸²à¸</option>
-      <option value="mine">â­ à¸à¸­à¸à¸à¸±à¸</option>
+      <option value="">ทุกสถานะจอง</option>
+      <option value="locked">🔒 จองแล้ว</option>
+      <option value="unlocked">🔓 ว่าง</option>
+      <option value="mine">⭐ ของฉัน</option>
     </select>
   </div>
 
@@ -207,13 +207,13 @@ tr:hover td{background:rgba(245,158,11,.04)}
       <thead>
         <tr>
           <th onclick="sortBy('number')">#</th>
-          <th onclick="sortBy('name')">à¸à¸·à¹à¸­</th>
-          <th onclick="sortBy('phone')">à¹à¸à¸­à¸£à¹à¹à¸à¸£</th>
+          <th onclick="sortBy('name')">ชื่อ</th>
+          <th onclick="sortBy('phone')">เบอร์โทร</th>
           <th onclick="sortBy('priority')">Priority</th>
-          <th onclick="sortBy('status')">à¸ªà¸à¸²à¸à¸°</th>
-          <th onclick="sortBy('lockedBy')">à¸à¸­à¸à¹à¸à¸¢</th>
-          <th onclick="sortBy('called')">à¹à¸à¸£?</th>
-          <th onclick="sortBy('callDate')">à¸§à¸±à¸à¸à¸µà¹à¹à¸à¸£</th>
+          <th onclick="sortBy('status')">สถานะ</th>
+          <th onclick="sortBy('lockedBy')">จองโดย</th>
+          <th onclick="sortBy('called')">โทย?</th>
+          <th onclick="sortBy('callDate')">วันที่โทร</th>
           <th>Note</th>
         </tr>
       </thead>
@@ -221,34 +221,34 @@ tr:hover td{background:rgba(245,158,11,.04)}
     </table>
     <div class="loading" id="loadingArea">
       <div class="spinner"></div>
-      <div>à¸à¸³à¸¥à¸±à¸à¹à¸«à¸¥à¸à¸à¹à¸­à¸¡à¸¹à¸¥...</div>
+      <div>กำลังโหลดข้อมูล...</div>
     </div>
   </div>
 </div>
 
-<!-- âââââââ LEAD MODAL âââââââ -->
+<!-- ═══════ LEAD MODAL ═══════ -->
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()">â</button>
+    <button class="modal-close" onclick="closeModal()">✕</button>
     <h3 id="modalName"></h3>
     <div class="subtitle" id="modalSub"></div>
 
     <div class="info-grid" id="modalInfo"></div>
 
     <div class="modal-row">
-      <label>à¸ªà¸à¸²à¸à¸°à¸à¸²à¸£à¸à¸´à¸à¸à¹à¸­</label>
+      <label>สถานะการติดต่อ</label>
       <div class="status-grid" id="statusGrid"></div>
     </div>
 
     <div class="modal-row">
-      <label>ð Note</label>
-      <textarea id="modalNote" placeholder="à¸à¸à¸à¸±à¸à¸à¸¶à¸..."></textarea>
+      <label>📝 Note</label>
+      <textarea id="modalNote" placeholder="จดบันทึก..."></textarea>
     </div>
 
     <div class="modal-actions">
-      <button class="btn btn-sm btn-save" onclick="saveLead()">ð¾ à¸à¸±à¸à¸à¸¶à¸</button>
+      <button class="btn btn-sm btn-save" onclick="saveLead()">💾 บันทึก</button>
       <button class="btn btn-sm" id="modalLockBtn" onclick="toggleLock()"></button>
-      <a class="btn btn-sm btn-ghost" id="modalCallBtn" href="#">ð à¹à¸à¸£</a>
+      <a class="btn btn-sm btn-ghost" id="modalCallBtn" href="#">📞 โทร</a>
     </div>
   </div>
 </div>
@@ -257,18 +257,18 @@ tr:hover td{background:rgba(245,158,11,.04)}
 <div class="toast" id="toast"></div>
 
 <script>
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 //  CONFIG
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbwO_Ms-9GuTWb3W5Si73mD29eBvxRyBOXJDa_s9lACCoAxbfoIJwQKjPyyq2qSq9IwE/exec';
 
 const STATUSES = [
-  'ð à¸¢à¸±à¸à¹à¸¡à¹à¹à¸à¹à¸à¸´à¸à¸à¹à¸­',
-  'ð à¹à¸¡à¹à¸£à¸±à¸à¸ªà¸²à¸¢',
-  'ð¬ à¸à¸¹à¸à¸à¸¸à¸¢à¹à¸¥à¹à¸§',
-  'ð à¸à¸±à¸à¸«à¸¡à¸²à¸¢à¹à¸¥à¹à¸§',
-  'â à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢',
-  'â à¹à¸¡à¹à¸ªà¸à¹à¸'
+  '🆕 ยังไม่ได้ติดต่อ',
+  '📞 ไม่รับสาย',
+  '💬 พูดคุยแล้ว',
+  '📅 นัดหมายแล้ว',
+  '✅ ปิดการขาย',
+  '❌ ไม่สนใจ'
 ];
 
 let staffName = '';
@@ -278,12 +278,12 @@ let activeLead = null;
 let sortCol = 'number';
 let sortAsc = true;
 
-// âââââââââââââââââââââââââââââââââââ
+// ══════════════════════════════════════════════════════════════
 //  LOGIN / LOGOUT
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 function doLogin() {
   const name = document.getElementById('nameInput').value.trim();
-  if (!name) { showToast('â ï¸ à¸à¸£à¸¸à¸à¸²à¹à¸ªà¹à¸à¸·à¹à¸­'); return; }
+  if (!name) { showToast('⚠️ กรุณาใส่ชื่อ'); return; }
   staffName = name;
   role = document.getElementById('roleInput').value;
   localStorage.setItem('jia_name', staffName);
@@ -302,7 +302,7 @@ function showApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('displayName').textContent = staffName;
-  document.getElementById('displayRole').textContent = role === 'manager' ? 'ð à¸à¸¹à¹à¸à¸±à¸à¸à¸²à¸£' : 'ð¼ à¹à¸à¸¥à¸¥à¹';
+  document.getElementById('displayRole').textContent = role === 'manager' ? '👔 ผู้จัดการ' : '💼 เซลล์';
   if (role === 'manager') {
     document.getElementById('staffSection').style.display = 'block';
   } else {
@@ -322,13 +322,13 @@ function showApp() {
   }
 })();
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 //  DATA LOADING
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 async function loadData() {
   document.getElementById('loadingArea').style.display = 'block';
   document.getElementById('tableBody').innerHTML = '';
-  document.getElementById('refreshBtn').textContent = 'â³ à¸à¸³à¸¥à¸±à¸à¹à¸«à¸¥à¸...';
+  document.getElementById('refreshBtn').textContent = '⏳ กำลังโหลด...';
 
   try {
     const resp = await fetch(API_URL + '?action=getLeads');
@@ -338,21 +338,21 @@ async function loadData() {
       renderStats();
       renderTable();
       if (role === 'manager') renderStaffPerformance();
-      showToast('â à¹à¸«à¸¥à¸à¸à¹à¸­à¸¡à¸¹à¸¥à¸ªà¸³à¹à¸£à¹à¸ (' + allLeads.length + ' leads)');
+      showToast('✅ โหลดข้อมูลสำเร็จ (' + allLeads.length + ' leads)');
     } else {
-      showToast('â ï¸ à¹à¸«à¸¥à¸à¹à¸¡à¹à¸ªà¸³à¹à¸£à¹à¸');
+      showToast('⚠️ โหลดไม่สำเร็จ');
     }
   } catch(e) {
-    showToast('â à¹à¸à¸·à¹à¸­à¸¡à¸à¹à¸­à¹à¸¡à¹à¹à¸à¹: ' + e.message);
+    showToast('❌ เชื่อมต่อไม่ได้: ' + e.message);
   }
 
   document.getElementById('loadingArea').style.display = 'none';
-  document.getElementById('refreshBtn').textContent = 'ð à¸£à¸µà¹à¸à¸£à¸';
+  document.getElementById('refreshBtn').textContent = '🔄 รีเฟรช';
 }
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 //  STATS CARDS
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 function renderStats() {
   let hot=0, warm=0, cold=0, locked=0, contacted=0, closed=0, appointed=0;
   allLeads.forEach(l => {
@@ -362,20 +362,20 @@ function renderStats() {
     else cold++;
     if (l.lockedBy) locked++;
     if (l.called) contacted++;
-    if ((l.status||'').includes('à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢')) closed++;
-    if ((l.status||'').includes('à¸à¸±à¸à¸«à¸¡à¸²à¸¢')) appointed++;
+    if ((l.status||'').includes('ปิดการขาย')) closed++;
+    if ((l.status||'').includes('นัดหมาย')) appointed++;
   });
 
   const cards = [
-    { num: allLeads.length, label: 'à¸¥à¸µà¸à¸à¸±à¹à¸à¸«à¸¡à¸', cls: '' },
-    { num: hot, label: 'ð¥ HOT', cls: 'stat-hot' },
-    { num: warm, label: 'ð¤ Warm', cls: 'stat-warm' },
-    { num: cold, label: 'âï¸ Cold', cls: 'stat-cold' },
-    { num: locked, label: 'ð à¸à¸­à¸à¹à¸¥à¹à¸§', cls: 'stat-purple' },
-    { num: allLeads.length - locked, label: 'ð à¸¢à¸±à¸à¸§à¹à¸²à¸', cls: '' },
-    { num: contacted, label: 'ð à¹à¸à¸£à¹à¸¥à¹à¸§', cls: 'stat-blue' },
-    { num: closed, label: 'â à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢', cls: 'stat-green' },
-    { num: appointed, label: 'ð à¸à¸±à¸à¸«à¸¡à¸²à¸¢', cls: 'stat-green' },
+    { num: allLeads.length, label: 'ลีดทั้งหมด', cls: '' },
+    { num: hot, label: '🔥 HOT', cls: 'stat-hot' },
+    { num: warm, label: '🌤 Warm', cls: 'stat-warm' },
+    { num: cold, label: '❄️ Cold', cls: 'stat-cold' },
+    { num: locked, label: '🔒 จองแล้ว', cls: 'stat-purple' },
+    { num: allLeads.length - locked, label: '🔓 ยังว่าง', cls: '' },
+    { num: contacted, label: '📞 โทรแล้ว', cls: 'stat-blue' },
+    { num: closed, label: '✅ ปิดการขาย', cls: 'stat-green' },
+    { num: appointed, label: '📅 นัดหมาย', cls: 'stat-green' },
   ];
 
   document.getElementById('statsArea').innerHTML = cards.map(c =>
@@ -383,9 +383,9 @@ function renderStats() {
   ).join('');
 }
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 //  STAFF PERFORMANCE (Manager)
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 function renderStaffPerformance() {
   const staffMap = {};
   allLeads.forEach(l => {
@@ -393,29 +393,29 @@ function renderStaffPerformance() {
     if (!staffMap[l.lockedBy]) staffMap[l.lockedBy] = { total:0, contacted:0, closed:0, appointed:0 };
     staffMap[l.lockedBy].total++;
     if (l.called) staffMap[l.lockedBy].contacted++;
-    if ((l.status||'').includes('à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢')) staffMap[l.lockedBy].closed++;
-    if ((l.status||'').includes('à¸à¸±à¸à¸«à¸¡à¸²à¸¢')) staffMap[l.lockedBy].appointed++;
+    if ((l.status||'').includes('ปิดการขาย')) staffMap[l.lockedBy].closed++;
+    if ((l.status||'').includes('นัดหมาย')) staffMap[l.lockedBy].appointed++;
   });
 
   const html = Object.keys(staffMap).map(name => {
     const s = staffMap[name];
     return `<div class="staff-card">
-      <div class="staff-name">ð¤ ${name}</div>
+      <div class="staff-name">👤 ${name}</div>
       <div class="staff-stats">
-        <span>à¸à¸­à¸: <b>${s.total}</b></span>
-        <span>à¹à¸à¸£: <b>${s.contacted}</b></span>
-        <span>à¸à¸±à¸: <b>${s.appointed}</b></span>
-        <span>à¸à¸´à¸: <b style="color:var(--green)">${s.closed}</b></span>
+        <span>จอง: <b>${s.total}</b></span>
+        <span>โทร: <b>${s.contacted}</b></span>
+        <span>นัด: <b>${s.appointed}</b></span>
+        <span>ปิด: <b style="color:var(--green)">${s.closed}</b></span>
       </div>
     </div>`;
   }).join('');
 
-  document.getElementById('staffGrid').innerHTML = html || '<p style="color:var(--text2)">à¸¢à¸±à¸à¹à¸¡à¹à¸¡à¸µà¹à¸à¸¥à¸¥à¹à¸à¸­à¸à¸¥à¸µà¸</p>';
+  document.getElementById('staffGrid').innerHTML = html || '<p style="color:var(--text2)">ยังไม่มีเซลล์จองลีด</p>';
 }
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 //  TABLE RENDERING
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 function getFilteredLeads() {
   const search = document.getElementById('searchInput').value.toLowerCase();
   const fp = document.getElementById('filterPriority').value;
@@ -464,8 +464,8 @@ function renderTable() {
     const pCls = (l.priority||'').toLowerCase().includes('hot') ? 'priority-hot'
                : (l.priority||'').toLowerCase().includes('warm') ? 'priority-warm' : 'priority-cold';
     const lockHtml = l.lockedBy
-      ? `<span class="lock-badge lock-yes">ð ${l.lockedBy}</span>`
-      : `<span class="lock-badge lock-no">â</span>`;
+      ? `<span class="lock-badge lock-yes">🔒 ${l.lockedBy}</span>`
+      : `<span class="lock-badge lock-no">—</span>`;
 
     return `<tr>
       <td>${l.number||''}</td>
@@ -481,28 +481,28 @@ function renderTable() {
   }).join('');
 
   if (leads.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text2)">à¹à¸¡à¹à¸à¸à¸à¹à¸­à¸¡à¸¹à¸¥</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text2)">ไม่พบข้อมูล</td></tr>';
   }
 }
 
-// ââââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 //  MODAL
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 function openModal(rowIndex) {
   activeLead = allLeads.find(l => l.rowIndex === rowIndex);
   if (!activeLead) return;
 
   document.getElementById('modalName').textContent = activeLead.name;
   document.getElementById('modalSub').textContent =
-    `${activeLead.priority} Â· ${activeLead.phone || 'à¹à¸¡à¹à¸¡à¸µà¹à¸à¸­à¸£à¹'} Â· à¸ªà¸¡à¸±à¸à¸£ ${activeLead.date || '-'}`;
+    `${activeLead.priority} · ${activeLead.phone || 'ไม่มีเบอร์'} · สมัคร ${activeLead.date || '-'}`;
 
   // Info grid
   document.getElementById('modalInfo').innerHTML = `
-    <div class="info-item"><span>à¸à¸§à¸²à¸¡à¸ªà¸à¹à¸:</span> ${activeLead.interest || '-'}</div>
-    <div class="info-item"><span>à¸à¸¥à¸ªà¸¸à¸à¸à¹à¸²à¸¢:</span> ${activeLead.result || '-'}</div>
-    <div class="info-item"><span>à¹à¸à¸£à¹à¸¥à¹à¸§:</span> ${activeLead.called || 'à¸¢à¸±à¸à¹à¸¡à¹à¹à¸à¹à¹à¸à¸£'}</div>
-    <div class="info-item"><span>à¸§à¸±à¸à¸à¸µà¹à¹à¸à¸£:</span> ${activeLead.callDate || '-'}</div>
-    <div class="info-item"><span>à¸à¸­à¸à¹à¸à¸¢:</span> ${activeLead.lockedBy || '(à¸§à¹à¸²à¸)'}</div>
+    <div class="info-item"><span>ความสนใจ:</span> ${activeLead.interest || '-'}</div>
+    <div class="info-item"><span>ผลสุดท้าย:</span> ${activeLead.result || '-'}</div>
+    <div class="info-item"><span>โทรแล้ว:</span> ${activeLead.called || 'ยังไม่ได้โทร'}</div>
+    <div class="info-item"><span>วันที่โทร:</span> ${activeLead.callDate || '-'}</div>
+    <div class="info-item"><span>จองโดย:</span> ${activeLead.lockedBy || '(ว่าง)'}</div>
     <div class="info-item"><span>LINE:</span> ${activeLead.line1 || '-'}</div>
   `;
 
@@ -542,21 +542,21 @@ function selectStatus(el, status) {
 function updateLockBtn() {
   const btn = document.getElementById('modalLockBtn');
   if (!activeLead.lockedBy) {
-    btn.textContent = 'ð à¸à¸­à¸à¸¥à¸¹à¸à¸à¹à¸²à¸à¸à¸à¸µà¹';
+    btn.textContent = '🔒 จองลูกค้าคนนี้';
     btn.className = 'btn btn-sm btn-lock';
   } else if (activeLead.lockedBy === staffName) {
-    btn.textContent = 'ð à¸à¸¥à¸à¸¥à¹à¸­à¸';
+    btn.textContent = '🔓 ปลดล็อค';
     btn.className = 'btn btn-sm btn-unlock';
   } else {
-    btn.textContent = 'ð à¸à¸­à¸à¹à¸à¸¢ ' + activeLead.lockedBy;
+    btn.textContent = '🔒 จองโดย ' + activeLead.lockedBy;
     btn.className = 'btn btn-sm btn-ghost';
     btn.disabled = true;
   }
 }
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 //  API ACTIONS
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 async function apiPost(body) {
   const resp = await fetch(API_URL, {
     method: 'POST',
@@ -572,7 +572,7 @@ async function saveLead() {
   const status = activeLead._selectedStatus || activeLead.status;
   const note = document.getElementById('modalNote').value;
 
-  showToast('â³ à¸à¸³à¸¥à¸±à¸à¸à¸±à¸à¸à¸¶à¸...');
+  showToast('⏳ กำลังบันทึก...');
   const result = await apiPost({
     apiAction: 'update',
     rowIndex: activeLead.rowIndex,
@@ -585,9 +585,9 @@ async function saveLead() {
     renderStats();
     renderTable();
     if (role === 'manager') renderStaffPerformance();
-    showToast('â à¸à¸±à¸à¸à¸¶à¸à¸ªà¸³à¹à¸£à¹à¸!');
+    showToast('✅ บันทึกสำเร็จ!');
   } else {
-    showToast('â ï¸ ' + (result.msg || 'à¹à¸à¸´à¸à¸à¹à¸­à¸à¸´à¸à¸à¸¥à¸²à¸'));
+    showToast('⚠️ ' + (result.msg || 'เกิดข้อผิดพลาด'));
   }
 }
 
@@ -595,36 +595,36 @@ async function toggleLock() {
   if (!activeLead) return;
 
   if (!activeLead.lockedBy) {
-    showToast('â³ à¸à¸³à¸¥à¸±à¸à¸à¸­à¸...');
+    showToast('⏳ กำลังจอง...');
     const r = await apiPost({ apiAction:'lock', rowIndex: activeLead.rowIndex, staffName: staffName });
     if (r.ok) {
       activeLead.lockedBy = staffName;
       updateLockBtn(); renderStats(); renderTable();
       if (role === 'manager') renderStaffPerformance();
-      showToast('ð à¸à¸­à¸à¹à¸¥à¹à¸§!');
-    } else { showToast('â ï¸ ' + r.msg); }
+      showToast('🔒 จองแล้ว!');
+    } else { showToast('⚠️ ' + r.msg); }
   } else if (activeLead.lockedBy === staffName) {
-    showToast('â³ à¸à¸³à¸¥à¸±à¸à¸à¸¥à¸à¸¥à¹à¸­à¸...');
+    showToast('⏳ กำลังปลดล็อค...');
     const r = await apiPost({ apiAction:'unlock', rowIndex: activeLead.rowIndex, staffName: staffName });
     if (r.ok) {
       activeLead.lockedBy = '';
       updateLockBtn(); renderStats(); renderTable();
       if (role === 'manager') renderStaffPerformance();
-      showToast('ð à¸à¸¥à¸à¸¥à¹à¸­à¸à¹à¸¥à¹à¸§');
-    } else { showToast('â ï¸ ' + r.msg); }
+      showToast('🔓 ปลดล็อคแล้ว');
+    } else { showToast('⚠️ ' + r.msg); }
   } else {
-    showToast('â ï¸ à¸à¸­à¸à¹à¸à¸¢: ' + activeLead.lockedBy);
+    showToast('⚠️ จองโดย: ' + activeLead.lockedBy);
   }
 }
 
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 //  TOAST
-// âââââââââââââââââââââââââââââââââââ
+// ═══════════════════════════════════
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.style.display = 'block';
-  t.style.background = msg.includes('â ï¸') || msg.includes('â') ? 'var(--accent2)' : 'var(--green)';
+  t.style.background = msg.includes('⚠️') || msg.includes('❌') ? 'var(--accent2)' : 'var(--green)';
   t.style.color = '#fff';
   clearTimeout(t._timeout);
   t._timeout = setTimeout(() => t.style.display = 'none', 2500);

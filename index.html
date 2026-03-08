@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JIA Sales Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f172a;--card:#1e293b;--card2:#334155;
+  --accent:#f59e0b;--accent2:#ef4444;--green:#22c55e;--blue:#3b82f6;--purple:#a855f7;
+  --text:#f1f5f9;--text2:#94a3b8;--border:#475569;
+  --hot:#ef4444;--warm:#f59e0b;--cold:#3b82f6;
+}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+
+/* ââ Login ââ */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{background:var(--card);border-radius:20px;padding:40px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-box h1{font-size:2rem;margin-bottom:8px}
+.login-box p{color:var(--text2);margin-bottom:24px}
+.login-box input{width:100%;padding:14px 18px;border-radius:12px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:1rem;margin-bottom:12px;outline:none;transition:.2s}
+.login-box input:focus{border-color:var(--accent)}
+.login-box select{width:100%;padding:14px 18px;border-radius:12px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-size:1rem;margin-bottom:20px;outline:none}
+.btn{padding:14px 28px;border:none;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.1)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#d97706);color:#000;width:100%}
+.btn-sm{padding:8px 16px;font-size:.85rem;border-radius:8px}
+.btn-lock{background:var(--accent);color:#000}
+.btn-unlock{background:var(--card2);color:var(--text)}
+.btn-save{background:var(--green);color:#000}
+.btn-danger{background:var(--accent2);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}
+
+/* ââ App Shell ââ */
+.app{display:none}
+.topbar{background:var(--card);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.topbar h2{font-size:1.2rem}
+.topbar .user-info{color:var(--text2);font-size:.9rem}
+.topbar .user-info b{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+#refreshBtn{background:var(--card2);color:var(--text);border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.85rem}
+#refreshBtn:hover{background:var(--border)}
+#logoutBtn{background:transparent;border:1px solid var(--border);color:var(--text2);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.85rem}
+
+/* ââ Stats Cards ââ */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;padding:24px}
+.stat-card{background:var(--card);border-radius:16px;padding:20px;text-align:center;border:1px solid transparent;transition:.2s}
+.stat-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.stat-card .num{font-size:2rem;font-weight:700;line-height:1.2}
+.stat-card .label{color:var(--text2);font-size:.85rem;margin-top:4px}
+.stat-hot .num{color:var(--hot)}
+.stat-warm .num{color:var(--warm)}
+.stat-cold .num{color:var(--cold)}
+.stat-green .num{color:var(--green)}
+.stat-purple .num{color:var(--purple)}
+.stat-blue .num{color:var(--blue)}
+
+/* ââ Staff Performance (manager) ââ */
+.staff-section{padding:0 24px 24px}
+.staff-section h3{margin-bottom:12px;font-size:1.1rem}
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.staff-card{background:var(--card);border-radius:12px;padding:16px;border-left:4px solid var(--accent)}
+.staff-card .staff-name{font-weight:600;font-size:1rem;margin-bottom:8px}
+.staff-card .staff-stats{display:flex;gap:12px;flex-wrap:wrap}
+.staff-card .staff-stats span{font-size:.8rem;color:var(--text2)}
+.staff-card .staff-stats b{color:var(--text)}
+
+/* ââ Filters & Table ââ */
+.controls{padding:0 24px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.controls input,.controls select{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.9rem;outline:none}
+.controls input{min-width:200px;flex:1}
+.controls select{min-width:140px}
+.table-wrap{padding:0 24px 24px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+thead{position:sticky;top:0;z-index:2}
+th{background:var(--card2);padding:12px 10px;text-align:left;white-space:nowrap;font-weight:600;border-bottom:2px solid var(--border);cursor:pointer;user-select:none}
+th:hover{background:var(--border)}
+td{padding:10px;border-bottom:1px solid rgba(71,85,105,.3);vertical-align:middle}
+tr:hover td{background:rgba(245,158,11,.04)}
+.priority-badge{padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.priority-hot{background:rgba(239,68,68,.15);color:var(--hot)}
+.priority-warm{background:rgba(245,158,11,.15);color:var(--warm)}
+.priority-cold{background:rgba(59,130,246,.15);color:var(--cold)}
+.status-badge{padding:3px 10px;border-radius:20px;font-size:.78rem;white-space:nowrap}
+.lock-badge{padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600}
+.lock-yes{background:rgba(245,158,11,.15);color:var(--accent)}
+.lock-no{color:var(--text2)}
+.clickable{cursor:pointer;color:var(--blue);text-decoration:underline}
+.clickable:hover{color:var(--accent)}
+
+/* ââ Modal ââ */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:16px}
+.modal-bg.active{display:flex}
+.modal{background:var(--card);border-radius:20px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:28px;position:relative}
+.modal h3{font-size:1.2rem;margin-bottom:4px}
+.modal .subtitle{color:var(--text2);font-size:.9rem;margin-bottom:20px}
+.modal-close{position:absolute;top:16px;right:16px;background:var(--card2);border:none;color:var(--text);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.1rem}
+.modal-row{margin-bottom:16px}
+.modal-row label{display:block;font-size:.85rem;color:var(--text2);margin-bottom:6px}
+.modal-row input,.modal-row select,.modal-row textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.9rem;outline:none}
+.modal-row textarea{resize:vertical;min-height:80px}
+.modal-actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:20px}
+.info-grid .info-item{font-size:.85rem}
+.info-grid .info-item span{color:var(--text2)}
+
+/* ââ Status Grid ââ */
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.status-option{padding:10px;border:2px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;font-size:.85rem;transition:.2s}
+.status-option:hover{border-color:var(--accent);background:rgba(245,158,11,.05)}
+.status-option.active{border-color:var(--accent);background:rgba(245,158,11,.1)}
+
+/* ââ Toast ââ */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:12px 24px;border-radius:12px;font-weight:600;z-index:200;display:none;animation:fadeInUp .3s}
+@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ââ Loading ââ */
+.loading{text-align:center;padding:60px;color:var(--text2)}
+.spinner{display:inline-block;width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ââ Responsive ââ */
+@media(max-width:768px){
+  .stats{grid-template-columns:repeat(3,1fr);gap:10px;padding:16px}
+  .stat-card{padding:14px}
+  .stat-card .num{font-size:1.4rem}
+  .controls{padding:0 16px 12px}
+  .table-wrap{padding:0 16px 16px}
+  .staff-section{padding:0 16px 16px}
+  th,td{padding:8px 6px;font-size:.8rem}
+  .info-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- âââââââ LOGIN SCREEN âââââââ -->
+<div class="login-wrap" id="loginScreen">
+  <div class="login-box">
+    <h1>ð JIA Dashboard</h1>
+    <p>Sales Pipeline Management</p>
+    <input type="text" id="nameInput" placeholder="à¸à¸·à¹à¸­à¸à¸­à¸à¸à¸¸à¸ (à¹à¸à¹à¸ à¹à¸à¸, à¸à¸­à¸ª)" autofocus>
+    <select id="roleInput">
+      <option value="manager">ð à¸à¸¹à¹à¸à¸±à¸à¸à¸²à¸£ â à¸à¸¹à¸ à¸²à¸à¸£à¸§à¸¡à¸à¸±à¹à¸à¸«à¸¡à¸</option>
+      <option value="sales">ð¼ à¹à¸à¸¥à¸¥à¹ â à¸à¸±à¸à¸à¸²à¸£à¸¥à¸µà¸à¸à¸­à¸à¸à¸±à¸</option>
+    </select>
+    <button class="btn btn-primary" onclick="doLogin()">à¹à¸à¹à¸²à¸ªà¸¹à¹à¸£à¸°à¸à¸ ð</button>
+  </div>
+</div>
+
+<!-- âââââââ MAIN APP âââââââ -->
+<div class="app" id="app">
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h2>ð JIA Dashboard</h2>
+      <span class="user-info">ð¤ <b id="displayName"></b> Â· <span id="displayRole"></span></span>
+    </div>
+    <div class="topbar-right">
+      <button id="refreshBtn" onclick="loadData()">ð à¸£à¸µà¹à¸à¸£à¸</button>
+      <button id="logoutBtn" onclick="doLogout()">à¸­à¸­à¸à¸à¸²à¸à¸£à¸°à¸à¸</button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats" id="statsArea"></div>
+
+  <!-- Staff Performance (Manager only) -->
+  <div class="staff-section" id="staffSection" style="display:none">
+    <h3>ð à¸à¸¥à¸à¸²à¸à¹à¸à¸¥à¸¥à¹à¹à¸à¹à¸¥à¸°à¸à¸</h3>
+    <div class="staff-grid" id="staffGrid"></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="ð à¸à¹à¸à¸«à¸²à¸à¸·à¹à¸­, à¹à¸à¸­à¸£à¹à¹à¸à¸£..." oninput="renderTable()">
+    <select id="filterPriority" onchange="renderTable()">
+      <option value="">à¸à¸¸à¸ Priority</option>
+      <option value="hot">ð¥ HOT</option>
+      <option value="warm">ð¤ Warm</option>
+      <option value="cold">âï¸ Cold</option>
+    </select>
+    <select id="filterStatus" onchange="renderTable()">
+      <option value="">à¸à¸¸à¸à¸ªà¸à¸²à¸à¸°</option>
+      <option value="à¸¢à¸±à¸à¹à¸¡à¹à¹à¸à¹à¸à¸´à¸à¸à¹à¸­">ð à¸¢à¸±à¸à¹à¸¡à¹à¹à¸à¹à¸à¸´à¸à¸à¹à¸­</option>
+      <option value="à¹à¸¡à¹à¸£à¸±à¸à¸ªà¸²à¸¢">ð à¹à¸¡à¹à¸£à¸±à¸à¸ªà¸²à¸¢</option>
+      <option value="à¸à¸¹à¸à¸à¸¸à¸¢à¹à¸¥à¹à¸§">ð¬ à¸à¸¹à¸à¸à¸¸à¸¢à¹à¸¥à¹à¸§</option>
+      <option value="à¸à¸±à¸à¸«à¸¡à¸²à¸¢à¹à¸¥à¹à¸§">ð à¸à¸±à¸à¸«à¸¡à¸²à¸¢à¹à¸¥à¹à¸§</option>
+      <option value="à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢">â à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢</option>
+      <option value="à¹à¸¡à¹à¸ªà¸à¹à¸">â à¹à¸¡à¹à¸ªà¸à¹à¸</option>
+    </select>
+    <select id="filterLock" onchange="renderTable()">
+      <option value="">à¸à¸¸à¸à¸ªà¸à¸²à¸à¸°à¸à¸­à¸</option>
+      <option value="locked">ð à¸à¸­à¸à¹à¸¥à¹à¸§</option>
+      <option value="unlocked">ð à¸§à¹à¸²à¸</option>
+      <option value="mine">â­ à¸à¸­à¸à¸à¸±à¸</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('number')">#</th>
+          <th onclick="sortBy('name')">à¸à¸·à¹à¸­</th>
+          <th onclick="sortBy('phone')">à¹à¸à¸­à¸£à¹à¹à¸à¸£</th>
+          <th onclick="sortBy('priority')">Priority</th>
+          <th onclick="sortBy('status')">à¸ªà¸à¸²à¸à¸°</th>
+          <th onclick="sortBy('lockedBy')">à¸à¸­à¸à¹à¸à¸¢</th>
+          <th onclick="sortBy('called')">à¹à¸à¸£?</th>
+          <th onclick="sortBy('callDate')">à¸§à¸±à¸à¸à¸µà¹à¹à¸à¸£</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div class="loading" id="loadingArea">
+      <div class="spinner"></div>
+      <div>à¸à¸³à¸¥à¸±à¸à¹à¸«à¸¥à¸à¸à¹à¸­à¸¡à¸¹à¸¥...</div>
+    </div>
+  </div>
+</div>
+
+<!-- âââââââ LEAD MODAL âââââââ -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">â</button>
+    <h3 id="modalName"></h3>
+    <div class="subtitle" id="modalSub"></div>
+
+    <div class="info-grid" id="modalInfo"></div>
+
+    <div class="modal-row">
+      <label>à¸ªà¸à¸²à¸à¸°à¸à¸²à¸£à¸à¸´à¸à¸à¹à¸­</label>
+      <div class="status-grid" id="statusGrid"></div>
+    </div>
+
+    <div class="modal-row">
+      <label>ð Note</label>
+      <textarea id="modalNote" placeholder="à¸à¸à¸à¸±à¸à¸à¸¶à¸..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-sm btn-save" onclick="saveLead()">ð¾ à¸à¸±à¸à¸à¸¶à¸</button>
+      <button class="btn btn-sm" id="modalLockBtn" onclick="toggleLock()"></button>
+      <a class="btn btn-sm btn-ghost" id="modalCallBtn" href="#">ð à¹à¸à¸£</a>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// âââââââââââââââââââââââââââââââââââ
+//  CONFIG
+// âââââââââââââââââââââââââââââââââââ
+const API_URL = 'https://script.google.com/macros/s/AKfycbwO_Ms-9GuTWb3W5Si73mD29eBvxRyBOXJDa_s9lACCoAxbfoIJwQKjPyyq2qSq9IwE/exec';
+
+const STATUSES = [
+  'ð à¸¢à¸±à¸à¹à¸¡à¹à¹à¸à¹à¸à¸´à¸à¸à¹à¸­',
+  'ð à¹à¸¡à¹à¸£à¸±à¸à¸ªà¸²à¸¢',
+  'ð¬ à¸à¸¹à¸à¸à¸¸à¸¢à¹à¸¥à¹à¸§',
+  'ð à¸à¸±à¸à¸«à¸¡à¸²à¸¢à¹à¸¥à¹à¸§',
+  'â à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢',
+  'â à¹à¸¡à¹à¸ªà¸à¹à¸'
+];
+
+let staffName = '';
+let role = 'sales';
+let allLeads = [];
+let activeLead = null;
+let sortCol = 'number';
+let sortAsc = true;
+
+// âââââââââââââââââââââââââââââââââââ
+//  LOGIN / LOGOUT
+// âââââââââââââââââââââââââââââââââââ
+function doLogin() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) { showToast('â ï¸ à¸à¸£à¸¸à¸à¸²à¹à¸ªà¹à¸à¸·à¹à¸­'); return; }
+  staffName = name;
+  role = document.getElementById('roleInput').value;
+  localStorage.setItem('jia_name', staffName);
+  localStorage.setItem('jia_role', role);
+  showApp();
+}
+
+function doLogout() {
+  localStorage.removeItem('jia_name');
+  localStorage.removeItem('jia_role');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('displayName').textContent = staffName;
+  document.getElementById('displayRole').textContent = role === 'manager' ? 'ð à¸à¸¹à¹à¸à¸±à¸à¸à¸²à¸£' : 'ð¼ à¹à¸à¸¥à¸¥à¹';
+  if (role === 'manager') {
+    document.getElementById('staffSection').style.display = 'block';
+  } else {
+    document.getElementById('staffSection').style.display = 'none';
+  }
+  loadData();
+}
+
+// Auto-login
+(function() {
+  const saved = localStorage.getItem('jia_name');
+  const savedRole = localStorage.getItem('jia_role');
+  if (saved) {
+    staffName = saved;
+    role = savedRole || 'sales';
+    showApp();
+  }
+})();
+
+// âââââââââââââââââââââââââââââââââââ
+//  DATA LOADING
+// âââââââââââââââââââââââââââââââââââ
+async function loadData() {
+  document.getElementById('loadingArea').style.display = 'block';
+  document.getElementById('tableBody').innerHTML = '';
+  document.getElementById('refreshBtn').textContent = 'â³ à¸à¸³à¸¥à¸±à¸à¹à¸«à¸¥à¸...';
+
+  try {
+    const resp = await fetch(API_URL + '?action=getLeads');
+    const data = await resp.json();
+    if (data.ok) {
+      allLeads = data.leads;
+      renderStats();
+      renderTable();
+      if (role === 'manager') renderStaffPerformance();
+      showToast('â à¹à¸«à¸¥à¸à¸à¹à¸­à¸¡à¸¹à¸¥à¸ªà¸³à¹à¸£à¹à¸ (' + allLeads.length + ' leads)');
+    } else {
+      showToast('â ï¸ à¹à¸«à¸¥à¸à¹à¸¡à¹à¸ªà¸³à¹à¸£à¹à¸');
+    }
+  } catch(e) {
+    showToast('â à¹à¸à¸·à¹à¸­à¸¡à¸à¹à¸­à¹à¸¡à¹à¹à¸à¹: ' + e.message);
+  }
+
+  document.getElementById('loadingArea').style.display = 'none';
+  document.getElementById('refreshBtn').textContent = 'ð à¸£à¸µà¹à¸à¸£à¸';
+}
+
+// âââââââââââââââââââââââââââââââââââ
+//  STATS CARDS
+// âââââââââââââââââââââââââââââââââââ
+function renderStats() {
+  let hot=0, warm=0, cold=0, locked=0, contacted=0, closed=0, appointed=0;
+  allLeads.forEach(l => {
+    const p = (l.priority||'').toLowerCase();
+    if (p.includes('hot')) hot++;
+    else if (p.includes('warm')) warm++;
+    else cold++;
+    if (l.lockedBy) locked++;
+    if (l.called) contacted++;
+    if ((l.status||'').includes('à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢')) closed++;
+    if ((l.status||'').includes('à¸à¸±à¸à¸«à¸¡à¸²à¸¢')) appointed++;
+  });
+
+  const cards = [
+    { num: allLeads.length, label: 'à¸¥à¸µà¸à¸à¸±à¹à¸à¸«à¸¡à¸', cls: '' },
+    { num: hot, label: 'ð¥ HOT', cls: 'stat-hot' },
+    { num: warm, label: 'ð¤ Warm', cls: 'stat-warm' },
+    { num: cold, label: 'âï¸ Cold', cls: 'stat-cold' },
+    { num: locked, label: 'ð à¸à¸­à¸à¹à¸¥à¹à¸§', cls: 'stat-purple' },
+    { num: allLeads.length - locked, label: 'ð à¸¢à¸±à¸à¸§à¹à¸²à¸', cls: '' },
+    { num: contacted, label: 'ð à¹à¸à¸£à¹à¸¥à¹à¸§', cls: 'stat-blue' },
+    { num: closed, label: 'â à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢', cls: 'stat-green' },
+    { num: appointed, label: 'ð à¸à¸±à¸à¸«à¸¡à¸²à¸¢', cls: 'stat-green' },
+  ];
+
+  document.getElementById('statsArea').innerHTML = cards.map(c =>
+    `<div class="stat-card ${c.cls}"><div class="num">${c.num}</div><div class="label">${c.label}</div></div>`
+  ).join('');
+}
+
+// âââââââââââââââââââââââââââââââââââ
+//  STAFF PERFORMANCE (Manager)
+// âââââââââââââââââââââââââââââââââââ
+function renderStaffPerformance() {
+  const staffMap = {};
+  allLeads.forEach(l => {
+    if (!l.lockedBy) return;
+    if (!staffMap[l.lockedBy]) staffMap[l.lockedBy] = { total:0, contacted:0, closed:0, appointed:0 };
+    staffMap[l.lockedBy].total++;
+    if (l.called) staffMap[l.lockedBy].contacted++;
+    if ((l.status||'').includes('à¸à¸´à¸à¸à¸²à¸£à¸à¸²à¸¢')) staffMap[l.lockedBy].closed++;
+    if ((l.status||'').includes('à¸à¸±à¸à¸«à¸¡à¸²à¸¢')) staffMap[l.lockedBy].appointed++;
+  });
+
+  const html = Object.keys(staffMap).map(name => {
+    const s = staffMap[name];
+    return `<div class="staff-card">
+      <div class="staff-name">ð¤ ${name}</div>
+      <div class="staff-stats">
+        <span>à¸à¸­à¸: <b>${s.total}</b></span>
+        <span>à¹à¸à¸£: <b>${s.contacted}</b></span>
+        <span>à¸à¸±à¸: <b>${s.appointed}</b></span>
+        <span>à¸à¸´à¸: <b style="color:var(--green)">${s.closed}</b></span>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('staffGrid').innerHTML = html || '<p style="color:var(--text2)">à¸¢à¸±à¸à¹à¸¡à¹à¸¡à¸µà¹à¸à¸¥à¸¥à¹à¸à¸­à¸à¸¥à¸µà¸</p>';
+}
+
+// âââââââââââââââââââââââââââââââââââ
+//  TABLE RENDERING
+// âââââââââââââââââââââââââââââââââââ
+function getFilteredLeads() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const fp = document.getElementById('filterPriority').value;
+  const fs = document.getElementById('filterStatus').value;
+  const fl = document.getElementById('filterLock').value;
+
+  return allLeads.filter(l => {
+    if (search && !l.name.toLowerCase().includes(search) && !(l.phone||'').includes(search)) return false;
+    if (fp) {
+      const p = (l.priority||'').toLowerCase();
+      if (fp === 'hot' && !p.includes('hot')) return false;
+      if (fp === 'warm' && !p.includes('warm')) return false;
+      if (fp === 'cold' && !p.includes('cold') && !p.includes('cold')) return false;
+    }
+    if (fs && !(l.status||'').includes(fs)) return false;
+    if (fl === 'locked' && !l.lockedBy) return false;
+    if (fl === 'unlocked' && l.lockedBy) return false;
+    if (fl === 'mine' && l.lockedBy !== staffName) return false;
+    return true;
+  });
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  renderTable();
+}
+
+function renderTable() {
+  let leads = getFilteredLeads();
+
+  // Sort
+  leads.sort((a, b) => {
+    let va = a[sortCol] || '';
+    let vb = b[sortCol] || '';
+    if (typeof va === 'number' && typeof vb === 'number') return sortAsc ? va - vb : vb - va;
+    va = String(va).toLowerCase();
+    vb = String(vb).toLowerCase();
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = leads.map(l => {
+    const pCls = (l.priority||'').toLowerCase().includes('hot') ? 'priority-hot'
+               : (l.priority||'').toLowerCase().includes('warm') ? 'priority-warm' : 'priority-cold';
+    const lockHtml = l.lockedBy
+      ? `<span class="lock-badge lock-yes">ð ${l.lockedBy}</span>`
+      : `<span class="lock-badge lock-no">â</span>`;
+
+    return `<tr>
+      <td>${l.number||''}</td>
+      <td class="clickable" onclick="openModal(${l.rowIndex})">${l.name}</td>
+      <td>${l.phone||''}</td>
+      <td><span class="priority-badge ${pCls}">${l.priority||''}</span></td>
+      <td><span class="status-badge">${l.status||''}</span></td>
+      <td>${lockHtml}</td>
+      <td>${l.called||''}</td>
+      <td>${l.callDate||''}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.note||''}</td>
+    </tr>`;
+  }).join('');
+
+  if (leads.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text2)">à¹à¸¡à¹à¸à¸à¸à¹à¸­à¸¡à¸¹à¸¥</td></tr>';
+  }
+}
+
+// ââââââââââââââââââââââââââââââââââââ
+//  MODAL
+// âââââââââââââââââââââââââââââââââââ
+function openModal(rowIndex) {
+  activeLead = allLeads.find(l => l.rowIndex === rowIndex);
+  if (!activeLead) return;
+
+  document.getElementById('modalName').textContent = activeLead.name;
+  document.getElementById('modalSub').textContent =
+    `${activeLead.priority} Â· ${activeLead.phone || 'à¹à¸¡à¹à¸¡à¸µà¹à¸à¸­à¸£à¹'} Â· à¸ªà¸¡à¸±à¸à¸£ ${activeLead.date || '-'}`;
+
+  // Info grid
+  document.getElementById('modalInfo').innerHTML = `
+    <div class="info-item"><span>à¸à¸§à¸²à¸¡à¸ªà¸à¹à¸:</span> ${activeLead.interest || '-'}</div>
+    <div class="info-item"><span>à¸à¸¥à¸ªà¸¸à¸à¸à¹à¸²à¸¢:</span> ${activeLead.result || '-'}</div>
+    <div class="info-item"><span>à¹à¸à¸£à¹à¸¥à¹à¸§:</span> ${activeLead.called || 'à¸¢à¸±à¸à¹à¸¡à¹à¹à¸à¹à¹à¸à¸£'}</div>
+    <div class="info-item"><span>à¸§à¸±à¸à¸à¸µà¹à¹à¸à¸£:</span> ${activeLead.callDate || '-'}</div>
+    <div class="info-item"><span>à¸à¸­à¸à¹à¸à¸¢:</span> ${activeLead.lockedBy || '(à¸§à¹à¸²à¸)'}</div>
+    <div class="info-item"><span>LINE:</span> ${activeLead.line1 || '-'}</div>
+  `;
+
+  // Status grid
+  document.getElementById('statusGrid').innerHTML = STATUSES.map(s =>
+    `<div class="status-option ${(activeLead.status||'') === s ? 'active' : ''}"
+          onclick="selectStatus(this, '${s}')">${s}</div>`
+  ).join('');
+
+  // Note
+  document.getElementById('modalNote').value = activeLead.note || '';
+
+  // Call button
+  const callBtn = document.getElementById('modalCallBtn');
+  if (activeLead.phone) {
+    callBtn.href = 'tel:' + activeLead.phone;
+    callBtn.style.display = '';
+  } else {
+    callBtn.style.display = 'none';
+  }
+
+  updateLockBtn();
+  document.getElementById('modalBg').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('active');
+  activeLead = null;
+}
+
+function selectStatus(el, status) {
+  document.querySelectorAll('.status-option').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  activeLead._selectedStatus = status;
+}
+
+function updateLockBtn() {
+  const btn = document.getElementById('modalLockBtn');
+  if (!activeLead.lockedBy) {
+    btn.textContent = 'ð à¸à¸­à¸à¸¥à¸¹à¸à¸à¹à¸²à¸à¸à¸à¸µà¹';
+    btn.className = 'btn btn-sm btn-lock';
+  } else if (activeLead.lockedBy === staffName) {
+    btn.textContent = 'ð à¸à¸¥à¸à¸¥à¹à¸­à¸';
+    btn.className = 'btn btn-sm btn-unlock';
+  } else {
+    btn.textContent = 'ð à¸à¸­à¸à¹à¸à¸¢ ' + activeLead.lockedBy;
+    btn.className = 'btn btn-sm btn-ghost';
+    btn.disabled = true;
+  }
+}
+
+// âââââââââââââââââââââââââââââââââââ
+//  API ACTIONS
+// âââââââââââââââââââââââââââââââââââ
+async function apiPost(body) {
+  const resp = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  });
+  return await resp.json();
+}
+
+async function saveLead() {
+  if (!activeLead) return;
+
+  const status = activeLead._selectedStatus || activeLead.status;
+  const note = document.getElementById('modalNote').value;
+
+  showToast('â³ à¸à¸³à¸¥à¸±à¸à¸à¸±à¸à¸à¸¶à¸...');
+  const result = await apiPost({
+    apiAction: 'update',
+    rowIndex: activeLead.rowIndex,
+    updates: { status: status, note: note }
+  });
+
+  if (result.ok) {
+    activeLead.status = status;
+    activeLead.note = note;
+    renderStats();
+    renderTable();
+    if (role === 'manager') renderStaffPerformance();
+    showToast('â à¸à¸±à¸à¸à¸¶à¸à¸ªà¸³à¹à¸£à¹à¸!');
+  } else {
+    showToast('â ï¸ ' + (result.msg || 'à¹à¸à¸´à¸à¸à¹à¸­à¸à¸´à¸à¸à¸¥à¸²à¸'));
+  }
+}
+
+async function toggleLock() {
+  if (!activeLead) return;
+
+  if (!activeLead.lockedBy) {
+    showToast('â³ à¸à¸³à¸¥à¸±à¸à¸à¸­à¸...');
+    const r = await apiPost({ apiAction:'lock', rowIndex: activeLead.rowIndex, staffName: staffName });
+    if (r.ok) {
+      activeLead.lockedBy = staffName;
+      updateLockBtn(); renderStats(); renderTable();
+      if (role === 'manager') renderStaffPerformance();
+      showToast('ð à¸à¸­à¸à¹à¸¥à¹à¸§!');
+    } else { showToast('â ï¸ ' + r.msg); }
+  } else if (activeLead.lockedBy === staffName) {
+    showToast('â³ à¸à¸³à¸¥à¸±à¸à¸à¸¥à¸à¸¥à¹à¸­à¸...');
+    const r = await apiPost({ apiAction:'unlock', rowIndex: activeLead.rowIndex, staffName: staffName });
+    if (r.ok) {
+      activeLead.lockedBy = '';
+      updateLockBtn(); renderStats(); renderTable();
+      if (role === 'manager') renderStaffPerformance();
+      showToast('ð à¸à¸¥à¸à¸¥à¹à¸­à¸à¹à¸¥à¹à¸§');
+    } else { showToast('â ï¸ ' + r.msg); }
+  } else {
+    showToast('â ï¸ à¸à¸­à¸à¹à¸à¸¢: ' + activeLead.lockedBy);
+  }
+}
+
+// âââââââââââââââââââââââââââââââââââ
+//  TOAST
+// âââââââââââââââââââââââââââââââââââ
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  t.style.background = msg.includes('â ï¸') || msg.includes('â') ? 'var(--accent2)' : 'var(--green)';
+  t.style.color = '#fff';
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(() => t.style.display = 'none', 2500);
+}
+</script>
+</body>
+</html>

@@ -19,8 +19,8 @@ COPY public/ ./public/
 RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
-ENV PORT=3001
 
-EXPOSE 3001
+# Railway injects PORT dynamically
+EXPOSE ${PORT:-3001}
 
 CMD ["node", "--experimental-sqlite", "dist/index.js"]

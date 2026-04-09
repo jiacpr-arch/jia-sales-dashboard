@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เจียรักษา — ระบบติดตามใบเสนอราคา</title>
+<style>
+  :root{--green:#16a34a;--yellow:#d97706;--red:#dc2626;--blue:#2563eb;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans Thai',Sarabun,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:15px}
+  /* ── NAV ── */
+  #nav{background:var(--blue);color:#fff;padding:10px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+  #nav h1{font-size:17px;font-weight:700;flex:1}
+  #nav span{font-size:13px;opacity:.85}
+  #btn-logout{background:rgba(255,255,255,.2);border:none;color:#fff;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:13px}
+  /* ── TABS ── */
+  #tabs{display:flex;gap:4px;padding:12px 20px 0;background:#fff;border-bottom:1px solid var(--border)}
+  .tab{padding:8px 18px;border:none;background:none;cursor:pointer;font-size:14px;color:var(--muted);border-bottom:3px solid transparent;border-radius:4px 4px 0 0}
+  .tab.active{color:var(--blue);border-color:var(--blue);font-weight:600}
+  /* ── MAIN ── */
+  #main{padding:20px;max-width:1400px;margin:auto}
+  .hidden{display:none!important}
+  /* ── CARDS ── */
+  .stat-row{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;flex:1;min-width:140px}
+  .stat-card .n{font-size:28px;font-weight:700}
+  .stat-card .l{font-size:12px;color:var(--muted);margin-top:2px}
+  .stat-card.green .n{color:var(--green)}
+  .stat-card.yellow .n{color:var(--yellow)}
+  .stat-card.red .n{color:var(--red)}
+  /* ── TABLE ── */
+  .filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .filters input,.filters select{border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;background:#fff}
+  .filters input{flex:1;min-width:160px}
+  .btn{border:none;border-radius:6px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600}
+  .btn-blue{background:var(--blue);color:#fff}
+  .btn-green{background:var(--green);color:#fff}
+  .btn-red{background:var(--red);color:#fff}
+  .btn-gray{background:#e2e8f0;color:var(--text)}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+  th{background:#f1f5f9;font-size:13px;font-weight:600;padding:10px 12px;text-align:left;white-space:nowrap}
+  td{padding:9px 12px;font-size:13px;border-top:1px solid var(--border);vertical-align:middle}
+  tr:hover td{background:#f8fafc}
+  .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+  .badge-safe{background:#dcfce7;color:var(--green)}
+  .badge-warning{background:#fef9c3;color:var(--yellow)}
+  .badge-expired{background:#fee2e2;color:var(--red)}
+  .pagination{display:flex;gap:6px;justify-content:center;margin-top:14px}
+  .page-btn{border:1px solid var(--border);background:#fff;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:13px}
+  .page-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+  /* ── DETAIL MODAL ── */
+  #modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center}
+  #modal{background:#fff;border-radius:12px;max-width:580px;width:95%;max-height:90vh;overflow-y:auto;padding:24px}
+  #modal h2{font-size:17px;margin-bottom:14px}
+  .detail-row{display:flex;gap:8px;margin-bottom:8px;font-size:13px}
+  .detail-row .lbl{color:var(--muted);min-width:130px}
+  .follow-list{margin:12px 0;max-height:180px;overflow-y:auto}
+  .follow-item{background:#f8fafc;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:13px}
+  .follow-item .ft{color:var(--muted);font-size:11px}
+  textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;resize:vertical;min-height:60px;font-family:inherit}
+  /* ── LOGIN ── */
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+  .login-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:36px 32px;max-width:380px;width:95%}
+  .login-card h2{font-size:20px;font-weight:700;margin-bottom:20px;text-align:center;color:var(--blue)}
+  .form-group{margin-bottom:14px}
+  .form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--muted)}
+  .form-group input{width:100%;border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:14px}
+  /* ── RANKING ── */
+  .rank-table td:first-child{font-weight:700;color:var(--blue)}
+  /* ── CONFLICTS ── */
+  .conflict-card{background:#fff;border:1px solid #fca5a5;border-radius:10px;padding:16px;margin-bottom:12px}
+  .conflict-card h4{color:var(--red);margin-bottom:8px}
+  /* ── PIPELINE KANBAN ── */
+  .pipeline-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;min-height:400px}
+  .pipeline-col{flex:0 0 220px;background:#f1f5f9;border-radius:10px;padding:10px;display:flex;flex-direction:column}
+  .pipeline-col-header{font-size:13px;font-weight:700;padding:6px 8px;margin-bottom:8px;border-radius:6px;display:flex;justify-content:space-between;align-items:center}
+  .pipeline-col-header .count{font-size:11px;font-weight:500;opacity:.7}
+  .pipeline-col-body{flex:1;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:60vh}
+  .pipeline-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;font-size:12px;cursor:default;transition:box-shadow .15s}
+  .pipeline-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.1)}
+  .pipeline-card .pc-name{font-weight:600;font-size:13px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pipeline-card .pc-amount{font-weight:700;color:var(--blue)}
+  .pipeline-card .pc-meta{color:var(--muted);font-size:11px;margin-top:4px}
+  .pipeline-card .pc-health{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+  .pipeline-card .pc-actions{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap}
+  .pipeline-card .pc-actions button{font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:#fff;cursor:pointer}
+  .pipeline-card .pc-actions button:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .stage-new .pipeline-col-header{background:#dbeafe;color:#1e40af}
+  .stage-contacted .pipeline-col-header{background:#e0e7ff;color:#4338ca}
+  .stage-quoted .pipeline-col-header{background:#fef3c7;color:#92400e}
+  .stage-negotiating .pipeline-col-header{background:#fde68a;color:#78350f}
+  .stage-won .pipeline-col-header{background:#dcfce7;color:#166534}
+  .stage-lost .pipeline-col-header{background:#fee2e2;color:#991b1b}
+  .pipeline-summary{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .pipeline-summary .ps-item{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 14px;min-width:120px;text-align:center}
+  .pipeline-summary .ps-item .ps-n{font-size:22px;font-weight:700}
+  .pipeline-summary .ps-item .ps-l{font-size:11px;color:var(--muted)}
+  .pipeline-summary .ps-item .ps-amt{font-size:11px;color:var(--blue);font-weight:600}
+  /* ── RESPONSIVE ── */
+  @media(max-width:640px){
+    #main{padding:12px}
+    .stat-row{gap:8px}
+    table{font-size:12px}
+    th,td{padding:7px 8px}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <h2>🏢 เจียรักษา Sales Portal</h2>
+    <div class="form-group"><label>Username</label><input id="inp-user" placeholder="username" autocomplete="username"></div>
+    <div class="form-group"><label>Password</label><input id="inp-pass" type="password" placeholder="password" autocomplete="current-password"></div>
+    <button class="btn btn-blue" style="width:100%;padding:10px" onclick="doLogin()">เข้าสู่ระบบ</button>
+    <p id="login-err" style="color:var(--red);font-size:13px;margin-top:8px;text-align:center"></p>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app" class="hidden">
+  <div id="nav">
+    <h1>🏢 เจียรักษา — ระบบติดตามใบเสนอราคา</h1>
+    <span id="nav-user"></span>
+    <button id="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
+  </div>
+  <div id="tabs">
+    <button class="tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+    <button class="tab" onclick="showTab('quotations')">📄 ใบเสนอราคา</button>
+    <button class="tab" onclick="showTab('pipeline')">🔀 Pipeline</button>
+    <button class="tab" onclick="showTab('ranking')" id="tab-ranking">📊 Ranking เซลล์</button>
+    <button class="tab admin-only hidden" onclick="showTab('conflicts')">⚠️ ลูกค้าชน</button>
+  </div>
+  <div id="main">
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard">
+      <h3 style="margin-bottom:16px">📊 Dashboard ยอดขาย <span id="dash-month" style="font-weight:400;color:var(--muted);font-size:14px"></span></h3>
+      <div class="stat-row" id="dash-kpi">
+        <div class="stat-card green"><div class="n" id="kpi-today-sales">-</div><div class="l">ยอดวันนี้</div><div style="font-size:11px;color:var(--muted)" id="kpi-today-count"></div></div>
+        <div class="stat-card" style="border-left:4px solid var(--blue)"><div class="n" style="color:var(--blue)" id="kpi-month-sales">-</div><div class="l">ยอดเดือนนี้</div><div style="font-size:11px;color:var(--muted)" id="kpi-month-count"></div></div>
+        <div class="stat-card yellow"><div class="n" id="kpi-awaiting">-</div><div class="l">ค้างจ่าย</div><div style="font-size:11px;color:var(--muted)" id="kpi-awaiting-count"></div></div>
+        <div class="stat-card" id="kpi-change-card"><div class="n" id="kpi-change">-</div><div class="l">เทียบเดือนก่อน</div></div>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:320px">
+          <h4 style="margin-bottom:10px">👤 ยอดขายตามเซลล์</h4>
+          <table><thead><tr><th>เซลล์</th><th>ยอดวันนี้</th><th>ยอดเดือนนี้</th><th>จำนวนใบ</th></tr></thead>
+          <tbody id="dash-sales-tbody"></tbody></table>
+        </div>
+        <div style="flex:1;min-width:320px">
+          <h4 style="margin-bottom:10px">🏆 Top 10 ลูกค้า</h4>
+          <table><thead><tr><th>#</th><th>ลูกค้า</th><th>ยอดรวม</th><th>ใบ</th></tr></thead>
+          <tbody id="dash-cust-tbody"></tbody></table>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <h4 style="margin-bottom:10px">📦 สินค้าขายดี Top 10</h4>
+        <table><thead><tr><th>#</th><th>สินค้า</th><th>จำนวนขาย</th><th>ยอดรวม</th></tr></thead>
+        <tbody id="dash-prod-tbody"></tbody></table>
+      </div>
+    </div>
+    <!-- QUOTATIONS TAB -->
+    <div id="tab-quotations" class="hidden">
+      <div class="stat-row" id="stat-row"></div>
+      <div class="filters">
+        <input id="f-search" placeholder="🔍 ค้นหาชื่อ/เลขที่เอกสาร..." oninput="applyFilter()">
+        <select id="f-status" onchange="applyFilter()">
+          <option value="">สถานะทั้งหมด</option>
+          <option value="safe">🟢 ปลอดภัย</option>
+          <option value="warning">🟡 ใกล้หมดอายุ</option>
+          <option value="expired">🔴 หมดอายุ</option>
+        </select>
+        <select id="f-sales" onchange="applyFilter()">
+          <option value="">เซลล์ทั้งหมด</option>
+        </select>
+        <button class="btn btn-gray" onclick="exportCsv()">⬇️ Export CSV</button>
+        <button class="btn btn-blue admin-only hidden" onclick="doSync()">🔄 Sync</button>
+      </div>
+      <table>
+        <thead><tr>
+          <th>เลขที่</th><th>ลูกค้า</th><th>มูลค่า</th>
+          <th>วันที่ออก</th><th>วันหมดอายุ</th><th>ติดตามล่าสุด</th>
+          <th>เซลล์</th><th>สถานะ</th><th></th>
+        </tr></thead>
+        <tbody id="quot-tbody"></tbody>
+      </table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+    <!-- RANKING TAB -->
+    <div id="tab-ranking" class="hidden">
+      <h3 style="margin-bottom:16px">📊 Ranking เซลล์</h3>
+      <table class="rank-table">
+        <thead><tr><th>อันดับ</th><th>ชื่อ</th><th>ใบทั้งหมด</th><th>🟢</th><th>🟡</th><th>🔴</th><th>มูลค่ารวม</th><th>Active ล่าสุด</th></tr></thead>
+        <tbody id="rank-tbody"></tbody>
+      </table>
+    </div>
+    <!-- CONFLICTS TAB -->
+    <div id="tab-conflicts" class="hidden">
+      <h3 style="margin-bottom:16px">⚠️ ลูกค้าชนกัน</h3>
+      <div id="conflict-list"></div>
+    </div>
+    <!-- PIPELINE TAB -->
+    <div id="tab-pipeline" class="hidden">
+      <h3 style="margin-bottom:16px">🔀 CRM Pipeline</h3>
+      <div class="pipeline-summary" id="pipeline-summary"></div>
+      <div class="pipeline-board" id="pipeline-board"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="modal-overlay" class="hidden" onclick="if(event.target===this)closeModal()">
+  <div id="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 id="modal-title">รายละเอียด</h2>
+      <button class="btn btn-gray" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentUser = null;
+let currentPage = 1;
+const PAGE_SIZE = 20;
+
+// ── API helper ────────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const r = await fetch('/api' + path, {
+    headers: { 'Content-Type': 'application/json', ...opts.headers },
+    credentials: 'include',
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if (r.status === 401) { showLogin(); return null; }
+  return r.json();
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById('inp-user').value.trim();
+  const password = document.getElementById('inp-pass').value;
+  const res = await api('/auth/login', { method: 'POST', body: { username, password } });
+  if (!res) return;
+  if (!res.ok) { document.getElementById('login-err').textContent = res.error; return; }
+  currentUser = res.user;
+  showApp();
+}
+document.getElementById('inp-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function doLogout() {
+  await api('/auth/logout', { method: 'POST' });
+  currentUser = null;
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+}
+
+function showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('nav-user').textContent = currentUser.fullName + (currentUser.role==='admin'?' (Admin)':'');
+  // Show admin-only elements
+  document.querySelectorAll('.admin-only').forEach(el => {
+    if (currentUser.role === 'admin') el.classList.remove('hidden');
+  });
+  loadDashboard();
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function showTab(name) {
+  ['dashboard','quotations','ranking','conflicts','pipeline'].forEach(t => {
+    const el = document.getElementById('tab-' + t);
+    if (el) el.classList.add('hidden');
+  });
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  event.target.classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'ranking') loadRanking();
+  if (name === 'conflicts') loadConflicts();
+  if (name === 'pipeline') loadPipeline();
+}
+
+// ── Dashboard ────────────────────────────────────────────────────────────────
+const fmtB = n => '฿' + Number(n).toLocaleString('th-TH', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+
+async function loadDashboard() {
+  const now = new Date();
+  const monthNames = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  document.getElementById('dash-month').textContent = monthNames[now.getMonth()] + ' ' + (now.getFullYear() + 543);
+
+  // Fetch all in parallel
+  const [overview, salesRank, topCust, topProd] = await Promise.all([
+    api('/dashboard/overview'),
+    api('/dashboard/sales-ranking'),
+    api('/dashboard/top-customers'),
+    api('/dashboard/top-products'),
+  ]);
+
+  // KPI Cards
+  if (overview) {
+    document.getElementById('kpi-today-sales').textContent = fmtB(overview.today?.sales);
+    document.getElementById('kpi-today-count').textContent = (overview.today?.count || 0) + ' ใบ';
+    document.getElementById('kpi-month-sales').textContent = fmtB(overview.thisMonth?.sales);
+    document.getElementById('kpi-month-count').textContent = (overview.thisMonth?.count || 0) + ' ใบ';
+    document.getElementById('kpi-awaiting').textContent = fmtB(overview.awaiting?.total);
+    document.getElementById('kpi-awaiting-count').textContent = (overview.awaiting?.count || 0) + ' ใบ';
+    const pct = overview.changePercent || 0;
+    const sign = pct >= 0 ? '+' : '';
+    document.getElementById('kpi-change').textContent = sign + pct + '%';
+    const card = document.getElementById('kpi-change-card');
+    card.className = 'stat-card ' + (pct >= 0 ? 'green' : 'red');
+  }
+
+  // Sales Ranking
+  const stb = document.getElementById('dash-sales-tbody');
+  if (salesRank && Array.isArray(salesRank)) {
+    stb.innerHTML = salesRank.map(s => `<tr>
+      <td style="font-weight:600">${s.name}</td>
+      <td>${fmtB(s.todaySales)}</td>
+      <td>${fmtB(s.monthSales)}</td>
+      <td>${s.monthCount}</td>
+    </tr>`).join('');
+  } else {
+    stb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted)">ไม่มีข้อมูล</td></tr>';
+  }
+
+  // Top Customers
+  const ctb = document.getElementById('dash-cust-tbody');
+  if (topCust && Array.isArray(topCust)) {
+    ctb.innerHTML = topCust.map((c, i) => `<tr>
+      <td style="font-weight:700;color:var(--blue)">${i + 1}</td>
+      <td>${c.name}</td>
+      <td>${fmtB(c.total)}</td>
+      <td>${c.count}</td>
+    </tr>`).join('');
+  } else {
+    ctb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted)">ไม่มีข้อมูล</td></tr>';
+  }
+
+  // Top Products
+  const ptb = document.getElementById('dash-prod-tbody');
+  if (topProd && Array.isArray(topProd)) {
+    ptb.innerHTML = topProd.map((p, i) => `<tr>
+      <td style="font-weight:700;color:var(--blue)">${i + 1}</td>
+      <td>${p.name}</td>
+      <td>${p.qty}</td>
+      <td>${fmtB(p.revenue)}</td>
+    </tr>`).join('');
+  } else {
+    ptb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted)">ไม่มีข้อมูล</td></tr>';
+  }
+}
+
+// ── Quotations ────────────────────────────────────────────────────────────────
+async function loadQuotations(page = 1) {
+  currentPage = page;
+  const search = document.getElementById('f-search').value;
+  const status = document.getElementById('f-status').value;
+  const sales  = document.getElementById('f-sales').value;
+  const qs = new URLSearchParams({ page, limit: PAGE_SIZE });
+  if (search) qs.set('search', search);
+  if (status) qs.set('status', status);
+  if (sales)  qs.set('sales', sales);
+  const res = await api('/quotations?' + qs);
+  if (!res) return;
+  renderStats(res.data);
+  renderTable(res.data);
+  renderPagination(res.total, page);
+  populateSalesFilter(res.data);
+}
+
+function applyFilter() { loadQuotations(1); }
+
+function renderStats(rows) {
+  const safe    = rows.filter(r => r.health==='safe').length;
+  const warning = rows.filter(r => r.health==='warning').length;
+  const expired = rows.filter(r => r.health==='expired').length;
+  document.getElementById('stat-row').innerHTML = `
+    <div class="stat-card green"><div class="n">${safe}</div><div class="l">🟢 ปลอดภัย</div></div>
+    <div class="stat-card yellow"><div class="n">${warning}</div><div class="l">🟡 ใกล้หมดอายุ</div></div>
+    <div class="stat-card red"><div class="n">${expired}</div><div class="l">🔴 หมดอายุแล้ว</div></div>
+    <div class="stat-card"><div class="n">${rows.length}</div><div class="l">📄 ทั้งหมดในหน้านี้</div></div>
+  `;
+}
+
+function renderTable(rows) {
+  const fmt = v => v ? new Date(v).toLocaleDateString('th-TH') : '-';
+  const fmtMoney = n => Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:0});
+  document.getElementById('quot-tbody').innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.document_number}</td>
+      <td>${r.contact_name}</td>
+      <td style="text-align:right">${fmtMoney(r.total_amount)}</td>
+      <td>${fmt(r.issue_date)}</td>
+      <td>${fmt(r.expiry_date)}</td>
+      <td>${r.last_follow_up ? fmt(r.last_follow_up) : '<span style="color:var(--red)">ยังไม่ติดตาม</span>'}</td>
+      <td>${r.sales_name||'-'}</td>
+      <td><span class="badge badge-${r.health}">${{safe:'🟢 ปลอดภัย',warning:'🟡 ใกล้หมด',expired:'🔴 หมดอายุ'}[r.health]}</span></td>
+      <td><button class="btn btn-green" style="padding:4px 10px" onclick="openDetail(${r.id})">ดู</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">ไม่มีข้อมูล</td></tr>';
+}
+
+function renderPagination(total, current) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  if (pages <= 1) { document.getElementById('pagination').innerHTML = ''; return; }
+  let html = '';
+  for (let i = 1; i <= pages; i++) {
+    html += `<button class="page-btn ${i===current?'active':''}" onclick="loadQuotations(${i})">${i}</button>`;
+  }
+  document.getElementById('pagination').innerHTML = html;
+}
+
+function populateSalesFilter(rows) {
+  const sel = document.getElementById('f-sales');
+  const cur = sel.value;
+  const seen = new Map();
+  rows.forEach(r => { if(r.sales_user_id) seen.set(r.sales_user_id, r.sales_name||r.sales_user_id); });
+  sel.innerHTML = '<option value="">เซลล์ทั้งหมด</option>' +
+    [...seen.entries()].map(([id,name]) => `<option value="${id}" ${id==cur?'selected':''}>${name}</option>`).join('');
+}
+
+// ── Detail modal ──────────────────────────────────────────────────────────────
+async function openDetail(id) {
+  const res = await api('/quotations/' + id);
+  if (!res) return;
+  const q = res.data;
+  const fu = res.followUps || [];
+  const fmt = v => v ? new Date(v).toLocaleDateString('th-TH') : '-';
+  const fmtMoney = n => Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:0});
+  document.getElementById('modal-title').textContent = q.document_number;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="detail-row"><span class="lbl">ลูกค้า</span><span>${q.contact_name}</span></div>
+    <div class="detail-row"><span class="lbl">เลขผู้เสียภาษี</span><span>${q.contact_tax_id||'-'}</span></div>
+    <div class="detail-row"><span class="lbl">มูลค่า</span><span>${fmtMoney(q.total_amount)} บาท</span></div>
+    <div class="detail-row"><span class="lbl">วันที่ออก</span><span>${fmt(q.issue_date)}</span></div>
+    <div class="detail-row"><span class="lbl">วันหมดอายุ</span><span>${fmt(q.expiry_date)}</span></div>
+    <div class="detail-row"><span class="lbl">เซลล์ผู้ดูแล</span><span>${q.sales_name||'-'}</span></div>
+    <div class="detail-row"><span class="lbl">สถานะ FlowAccount</span><span>${q.fa_status||'-'}</span></div>
+    <hr style="margin:12px 0;border-color:var(--border)">
+    <div style="font-weight:600;margin-bottom:8px">ประวัติ Follow-up (${fu.length})</div>
+    <div class="follow-list">
+      ${fu.length ? fu.map(f=>`
+        <div class="follow-item">
+          <div class="ft">${new Date(f.followed_at).toLocaleString('th-TH')} — ${f.user_name}</div>
+          ${f.note ? '<div>'+f.note+'</div>' : ''}
+        </div>`).join('') : '<div style="color:var(--muted);font-size:13px">ยังไม่มีประวัติการติดตาม</div>'}
+    </div>
+    <hr style="margin:12px 0;border-color:var(--border)">
+    <div style="font-weight:600;margin-bottom:8px">บันทึก Follow-up ใหม่</div>
+    <textarea id="fu-note" placeholder="บันทึกการติดต่อ (ไม่บังคับ)..."></textarea>
+    <button class="btn btn-green" style="margin-top:8px" onclick="submitFollowUp(${id})">✅ ติดตามแล้ว</button>
+  `;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+async function submitFollowUp(id) {
+  const note = document.getElementById('fu-note').value.trim();
+  const res = await api('/quotations/' + id + '/followup', { method: 'POST', body: { note } });
+  if (res && res.ok) { closeModal(); loadQuotations(currentPage); }
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+
+// ── Ranking ───────────────────────────────────────────────────────────────────
+async function loadRanking() {
+  const res = await api('/quotations/stats/ranking');
+  if (!res) return;
+  const fmtMoney = n => Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:0});
+  const fmt = v => v ? new Date(v).toLocaleDateString('th-TH') : '-';
+  document.getElementById('rank-tbody').innerHTML = res.data.map((r,i) => `
+    <tr>
+      <td>#${i+1}</td>
+      <td>${r.full_name}</td>
+      <td>${r.total_quotes}</td>
+      <td style="color:var(--green)">${r.safe}</td>
+      <td style="color:var(--yellow)">${r.warning}</td>
+      <td style="color:var(--red)">${r.expired}</td>
+      <td style="text-align:right">${fmtMoney(r.total_amount)}</td>
+      <td>${fmt(r.last_activity)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">ไม่มีข้อมูล</td></tr>';
+}
+
+// ── Conflicts ─────────────────────────────────────────────────────────────────
+async function loadConflicts() {
+  const res = await api('/quotations/check/conflicts');
+  if (!res) return;
+  const fmt = v => v ? new Date(v).toLocaleDateString('th-TH') : '-';
+  document.getElementById('conflict-list').innerHTML = res.data.length
+    ? res.data.map(c => `
+        <div class="conflict-card">
+          <h4>⚠️ ลูกค้าชน: ${c.contact_name} ${c.contact_tax_id?'('+c.contact_tax_id+')':''}</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
+            <div style="background:#f0fdf4;border-radius:8px;padding:10px">
+              <div style="font-weight:600;color:var(--green)">${c.sales_a_name}</div>
+              <div>${c.quot_a_number}</div>
+              <div style="color:var(--muted)">วันที่: ${fmt(c.quot_a_date)}</div>
+            </div>
+            <div style="background:#fff1f2;border-radius:8px;padding:10px">
+              <div style="font-weight:600;color:var(--red)">${c.sales_b_name}</div>
+              <div>${c.quot_b_number}</div>
+              <div style="color:var(--muted)">วันที่: ${fmt(c.quot_b_date)}</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+            <input id="reason-${c.quot_a_id}-${c.quot_b_id}" placeholder="เหตุผล (ไม่บังคับ)" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px">
+            <button class="btn btn-green" onclick="resolveConflict(${c.quot_a_id},${c.quot_b_id},'${c.quot_a_id}-${c.quot_b_id}')">✅ ให้ ${c.sales_a_name}</button>
+            <button class="btn btn-blue" onclick="resolveConflict(${c.quot_b_id},${c.quot_a_id},'${c.quot_a_id}-${c.quot_b_id}')">✅ ให้ ${c.sales_b_name}</button>
+          </div>
+        </div>`).join('')
+    : '<div style="color:var(--muted);padding:20px;text-align:center">🎉 ไม่มีลูกค้าชนกันในขณะนี้</div>';
+}
+
+async function resolveConflict(winnerId, loserId, key) {
+  const reason = document.getElementById('reason-'+key)?.value;
+  const res = await api('/quotations/check/resolve', { method:'POST', body:{ winnerId, loserId, reason } });
+  if (res && res.ok) { alert('✅ ตัดสินสิทธิ์เรียบร้อยแล้ว'); loadConflicts(); }
+  else if (res) alert('❌ ' + res.error);
+}
+
+// ── Pipeline ─────────────────────────────────────────────────────────────────
+const STAGE_LABELS = {
+  new: '🆕 ใหม่',
+  contacted: '📞 ติดต่อแล้ว',
+  quoted: '📝 เสนอราคาแล้ว',
+  negotiating: '🤝 เจรจา',
+  won: '🎉 ปิดดีล',
+  lost: '❌ เสียดีล',
+};
+const STAGE_ORDER = ['new','contacted','quoted','negotiating','won','lost'];
+
+async function loadPipeline() {
+  const res = await api('/quotations/pipeline/board');
+  if (!res || !res.ok) return;
+  renderPipelineSummary(res.summary);
+  renderPipelineBoard(res.data);
+}
+
+function renderPipelineSummary(summary) {
+  const fmtMoney = n => Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:0});
+  document.getElementById('pipeline-summary').innerHTML = STAGE_ORDER.map(s => `
+    <div class="ps-item">
+      <div class="ps-n">${summary[s]?.count || 0}</div>
+      <div class="ps-l">${STAGE_LABELS[s]}</div>
+      <div class="ps-amt">${fmtMoney(summary[s]?.totalAmount || 0)} ฿</div>
+    </div>
+  `).join('');
+}
+
+function renderPipelineBoard(data) {
+  const fmtMoney = n => Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:0});
+  const healthColor = h => ({safe:'var(--green)',warning:'var(--yellow)',expired:'var(--red)'}[h] || '#ccc');
+
+  document.getElementById('pipeline-board').innerHTML = STAGE_ORDER.map(stage => {
+    const cards = (data[stage] || []);
+    // Determine which stages this card can move to (adjacent + won/lost)
+    const stageIdx = STAGE_ORDER.indexOf(stage);
+    const moveTargets = [];
+    if (stage !== 'won' && stage !== 'lost') {
+      if (stageIdx > 0 && STAGE_ORDER[stageIdx-1] !== 'lost') moveTargets.push(STAGE_ORDER[stageIdx-1]);
+      if (stageIdx < 3) moveTargets.push(STAGE_ORDER[stageIdx+1]);
+      if (stage !== 'won') moveTargets.push('won');
+      if (stage !== 'lost') moveTargets.push('lost');
+    }
+    // Deduplicate
+    const uniqueTargets = [...new Set(moveTargets)];
+
+    return `
+      <div class="pipeline-col stage-${stage}">
+        <div class="pipeline-col-header">
+          <span>${STAGE_LABELS[stage]}</span>
+          <span class="count">${cards.length}</span>
+        </div>
+        <div class="pipeline-col-body">
+          ${cards.map(c => `
+            <div class="pipeline-card">
+              <div class="pc-name" title="${c.contact_name}">${c.contact_name}</div>
+              <div class="pc-amount">${fmtMoney(c.total_amount)} ฿</div>
+              <div class="pc-meta">
+                <span class="pc-health" style="background:${healthColor(c.health)}"></span>
+                ${c.sales_name || '-'}
+                ${c.days_since_follow_up != null ? ' &middot; ' + c.days_since_follow_up + ' วันไม่ติดตาม' : ''}
+              </div>
+              <div style="font-size:11px;color:var(--muted)">${c.document_number}</div>
+              ${uniqueTargets.length ? `
+                <div class="pc-actions">
+                  ${uniqueTargets.map(t => `<button onclick="moveStage(${c.id},'${t}')" title="ย้ายไป ${STAGE_LABELS[t]}">${STAGE_LABELS[t]}</button>`).join('')}
+                </div>` : ''}
+            </div>
+          `).join('') || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">ว่าง</div>'}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function moveStage(quotId, newStage) {
+  const res = await api('/quotations/' + quotId + '/stage', { method: 'PUT', body: { stage: newStage } });
+  if (res && res.ok) {
+    loadPipeline();
+  } else if (res) {
+    alert(res.error || 'เกิดข้อผิดพลาด');
+  }
+}
+
+// ── CSV Export ────────────────────────────────────────────────────────────────
+function exportCsv() {
+  window.open('/api/quotations/export/csv', '_blank');
+}
+
+// ── Sync ──────────────────────────────────────────────────────────────────────
+async function doSync() {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⏳ กำลัง Sync...';
+  const res = await api('/quotations/sync', { method: 'POST' });
+  btn.disabled = false; btn.textContent = '🔄 Sync';
+  if (res && res.ok) { alert(`✅ Sync เสร็จ: เพิ่ม ${res.added} / อัปเดต ${res.updated} รายการ`); loadQuotations(); }
+  else if (res) alert('❌ ' + res.error);
+}
+
+// ── Auto-check session on load ────────────────────────────────────────────────
+(async () => {
+  const res = await api('/auth/me');
+  if (res && res.ok) { currentUser = res.user; showApp(); }
+})();
+</script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "node --experimental-sqlite dist/index.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"

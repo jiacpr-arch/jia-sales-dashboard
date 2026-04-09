@@ -1,43 +1,6 @@
 import { getDb } from "./database";
-import { lineMessage } from "./line-notify";
-// node:sqlite uses identical API to better-sqlite3 for .prepare/.run/.get/.all
-
-const TOKEN_URL = process.env.FLOWACCOUNT_TOKEN_URL ?? "https://openapi.flowaccount.com/test/token";
-const BASE_URL  = process.env.FLOWACCOUNT_BASE_URL  ?? "https://openapi.flowaccount.com/sandbox";
-const CLIENT_ID = process.env.FLOWACCOUNT_CLIENT_ID ?? "";
-const CLIENT_SECRET = process.env.FLOWACCOUNT_CLIENT_SECRET ?? "";
-
-// Token cache
-let cachedToken = "";
-let tokenExpiresAt = 0;
-
-async function getToken(): Promise<string> {
-  if (cachedToken && Date.now() < tokenExpiresAt - 60_000) return cachedToken;
-  const res = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      scope: "flowaccount-api",
-    }),
-  });
-  if (!res.ok) throw new Error(`Token error: ${res.status}`);
-  const data = await res.json() as { access_token: string; expires_in: number };
-  cachedToken = data.access_token;
-  tokenExpiresAt = Date.now() + data.expires_in * 1000;
-  return cachedToken;
-}
-
-async function flowFetch(path: string): Promise<unknown> {
-  const token = await getToken();
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-  });
-  if (!res.ok) throw new Error(`FlowAccount ${path} → ${res.status}: ${await res.text()}`);
-  return res.json();
-}
+import { lineMessage, notifySalesPerson } from "./line-notify";
+import { faGet } from "./flowaccount-api";
 
 interface FAQuotation {
   documentId?: number;
@@ -59,47 +22,136 @@ export async function syncQuotations(): Promise<{ added: number; updated: number
   let updated = 0;
 
   try {
-    const data = await flowFetch(
-      "/quotations?currentPage=1&pageSize=100"
-    ) as { data?: { totalDocument?: string; list?: FAQuotation[] } };
+    // ดึงหลาย page — 12 เดือนล่าสุด
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - 12);
+    const cutoff = cutoffDate.toISOString().slice(0, 10);
 
-    const rows = data?.data?.list ?? [];
+    const allRows: FAQuotation[] = [];
+    let page = 1;
+    const maxPages = 200; // safety limit (200 pages × 100 = 20,000 records)
+    let keepGoing = true;
+
+    while (page <= maxPages && keepGoing) {
+      const data = await faGet(
+        `/quotations?currentPage=${page}&pageSize=100`
+      ) as { data?: { totalDocument?: string; list?: FAQuotation[] } };
+
+      const list = data?.data?.list ?? [];
+      if (list.length === 0) break;
+
+      for (const q of list) {
+        const pubDate = (q.publishedOn ?? "").slice(0, 10);
+        if (pubDate >= cutoff) {
+          allRows.push(q);
+        } else {
+          keepGoing = false; // ถึงข้อมูลเก่ากว่า 12 เดือน หยุด
+          break;
+        }
+      }
+
+      console.log(`[Sync] Page ${page}: ${list.length} records (total so far: ${allRows.length})`);
+      page++;
+    }
+
+    console.log(`[Sync] Total fetched: ${allRows.length} quotations (${page - 1} pages, cutoff: ${cutoff})`);
+    const rows = allRows;
+
+    // ── Normalize salesName (จัดกลุ่มชื่อซ้ำ) ──────────────────────────────
+    const SALES_NAME_MAP: Record<string, string> = {
+      // J variants
+      "J 0909791212": "J",
+      "เจ 0909791212": "J",
+      "Jia Cpr": "J",
+      "Fern-J": "J",
+      "F-J": "J",
+      // แก้มใส variants
+      "แก้มใส": "แก้มใส 093-1271669",
+      "แกัมใส": "แก้มใส 093-1271669",  // typo
+      // อลิตา variants
+      "อลิตา ภู่กัน": "อลิตา 0810120169",
+      "อลิตา ภู่กัน 0810120169": "อลิตา 0810120169",
+      "Alita 0810120169": "อลิตา 0810120169",
+      // นวพรรธน์ variants
+      "นวพรรธน์ 098 6693266": "นวพรรธน์ 098 669 3266",
+      // แพท
+      "แพท 098 669 3266": "แพท 098 669 3266",
+      // Fah variants
+      "Fah Jia0625200270": "Fah Jia",
+      // Vanida
+      "วนิดา": "Vanida",
+    };
+
+    function normalizeSalesName(name: string): string {
+      return SALES_NAME_MAP[name] ?? name;
+    }
+
+    // Auto-create users from salesName
+    const findOrCreateUser = (salesName: string): number | null => {
+      if (!salesName) return null;
+      const existing = db.prepare("SELECT id FROM users WHERE full_name = ?").get(salesName) as { id: number } | undefined;
+      if (existing) return existing.id;
+      // Create new user (sales role, random password — login via admin only)
+      const username = salesName.replace(/\s+/g, "_").toLowerCase().slice(0, 30);
+      try {
+        const result = db.prepare(
+          "INSERT INTO users (username, password_hash, full_name, role) VALUES (?, 'NOLOGIN', ?, 'sales')"
+        ).run(username, salesName);
+        console.log(`[Sync] Auto-created user: ${salesName} (id=${result.lastInsertRowid})`);
+        return Number(result.lastInsertRowid);
+      } catch {
+        // Duplicate username — try with suffix
+        const result = db.prepare(
+          "INSERT INTO users (username, password_hash, full_name, role) VALUES (?, 'NOLOGIN', ?, 'sales')"
+        ).run(username + "_" + Date.now().toString(36), salesName);
+        return Number(result.lastInsertRowid);
+      }
+    };
+
     for (const q of rows) {
-      const faId = String(q.documentId ?? q.recordId ?? "");
-      if (!faId) continue;
-      const productCodes = JSON.stringify((q.items ?? []).map((i) => i.name).filter(Boolean));
-      const grandTotal = typeof q.grandTotal === "string" ? parseFloat(q.grandTotal) : (q.grandTotal ?? 0);
-      const existing = db.prepare("SELECT id FROM quotations WHERE fa_document_id = ?").get(faId);
-      if (existing) {
-        db.prepare(`
-          UPDATE quotations
-          SET document_number=?, contact_name=?, contact_tax_id=?,
-              product_codes=?, total_amount=?, issue_date=?,
-              expiry_date=?, fa_status=?, updated_at=datetime('now','localtime')
-          WHERE fa_document_id=?
-        `).run(
-          q.documentSerial ?? "", q.contactName ?? "", q.contactTaxId ?? "",
-          productCodes, grandTotal,
-          q.publishedOn?.slice(0, 10) ?? "",
-          q.dueDate?.slice(0, 10) ?? null,
-          q.status ?? "1",
-          faId
-        );
-        updated++;
-      } else {
-        db.prepare(`
-          INSERT INTO quotations
-            (fa_document_id, document_number, contact_name, contact_tax_id,
-             product_codes, total_amount, issue_date, expiry_date, fa_status)
-          VALUES (?,?,?,?,?,?,?,?,?)
-        `).run(
-          faId, q.documentSerial ?? "", q.contactName ?? "", q.contactTaxId ?? "",
-          productCodes, grandTotal,
-          q.publishedOn?.slice(0, 10) ?? "",
-          q.dueDate?.slice(0, 10) ?? null,
-          q.status ?? "1"
-        );
-        added++;
+      try {
+        const faId = String(q.documentId ?? q.recordId ?? "");
+        if (!faId) continue;
+        const productCodes = JSON.stringify((q.items ?? []).map((i) => i.name).filter(Boolean));
+        const grandTotal = typeof q.grandTotal === "string" ? parseFloat(q.grandTotal) : (q.grandTotal ?? 0);
+        const salesUserId = findOrCreateUser(normalizeSalesName(q.salesName ?? ""));
+        const existing = db.prepare("SELECT id FROM quotations WHERE fa_document_id = ?").get(faId);
+        if (existing) {
+          db.prepare(`
+            UPDATE quotations
+            SET document_number=?, contact_name=?, contact_tax_id=?,
+                product_codes=?, total_amount=?, issue_date=?,
+                expiry_date=?, fa_status=?, sales_user_id=?, updated_at=datetime('now','localtime')
+            WHERE fa_document_id=?
+          `).run(
+            q.documentSerial ?? "", q.contactName ?? "", q.contactTaxId ?? "",
+            productCodes, grandTotal,
+            q.publishedOn?.slice(0, 10) ?? "",
+            q.dueDate?.slice(0, 10) ?? null,
+            q.status ?? "1",
+            salesUserId,
+            faId
+          );
+          updated++;
+        } else {
+          db.prepare(`
+            INSERT INTO quotations
+              (fa_document_id, document_number, contact_name, contact_tax_id,
+               product_codes, total_amount, issue_date, expiry_date, fa_status, sales_user_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
+          `).run(
+            faId, q.documentSerial ?? "", q.contactName ?? "", q.contactTaxId ?? "",
+            productCodes, grandTotal,
+            q.publishedOn?.slice(0, 10) ?? "",
+            q.dueDate?.slice(0, 10) ?? null,
+            q.status ?? "1",
+            salesUserId
+          );
+          added++;
+        }
+      } catch (err) {
+        // Skip individual record errors (FK constraint, etc.)
+        continue;
       }
     }
     db.prepare("INSERT INTO sync_log (status, records, message) VALUES (?,?,?)")
@@ -118,67 +170,91 @@ export async function syncQuotations(): Promise<{ added: number; updated: number
   return { added, updated };
 }
 
-// ── Auto-resolve conflicts: ใครออกใบก่อน + follow-up ภายใน 90 วัน = ได้สิทธิ์ ──
+// ── Auto-resolve conflicts ──────────────────────────────────────────────────
+// กฎ:
+// 1. ดูใบล่าสุดของแต่ละคน — ถ้าเกิน 90 วัน → หมดสิทธิ์
+// 2. ถ้ายังไม่เกิน 90 วันทั้งคู่ → คนออกใบแรกก่อน ได้สิทธิ์
+// 3. ถ้าทั้งคู่เกิน 90 วัน → รอ admin ตัดสิน
+const CONFLICT_EXPIRE_DAYS = 90; // 3 เดือน — ใบล่าสุดเกินนี้ถือว่าหมดสิทธิ์
+
 async function autoResolveConflicts(db: ReturnType<typeof getDb>): Promise<void> {
   const conflicts = db.prepare("SELECT * FROM v_conflicts").all() as Array<{
     quot_a_id: number; quot_a_date: string; sales_a_id: number; sales_a_name: string;
     quot_b_id: number; quot_b_date: string; sales_b_id: number; sales_b_name: string;
-    contact_name: string;
+    contact_name: string; product_codes: string;
   }>;
 
+  const now = Date.now();
+
   for (const c of conflicts) {
-    // Check if already resolved
     const resolved = db.prepare(
       "SELECT id FROM conflict_resolutions WHERE (winner_quot_id=? AND loser_quot_id=?) OR (winner_quot_id=? AND loser_quot_id=?)"
     ).get(c.quot_a_id, c.quot_b_id, c.quot_b_id, c.quot_a_id);
     if (resolved) continue;
 
-    // Who issued first?
-    const aFirst = (c.quot_a_date ?? "") <= (c.quot_b_date ?? "");
-    const firstId = aFirst ? c.quot_a_id : c.quot_b_id;
-    const secondId = aFirst ? c.quot_b_id : c.quot_a_id;
-    const firstName = aFirst ? c.sales_a_name : c.sales_b_name;
-    const secondName = aFirst ? c.sales_b_name : c.sales_a_name;
+    // หาใบล่าสุดของแต่ละเซลล์กับลูกค้านี้
+    const aLatest = db.prepare(
+      "SELECT MAX(issue_date) AS d FROM quotations WHERE sales_user_id=? AND contact_name=?"
+    ).get(c.sales_a_id, c.contact_name) as { d: string | null };
+    const bLatest = db.prepare(
+      "SELECT MAX(issue_date) AS d FROM quotations WHERE sales_user_id=? AND contact_name=?"
+    ).get(c.sales_b_id, c.contact_name) as { d: string | null };
 
-    // Check if first issuer followed up within 90 days
-    const lastFollow = db.prepare(
-      "SELECT MAX(followed_at) AS last FROM follow_ups WHERE quotation_id=?"
-    ).get(firstId) as { last: string | null };
+    const aDaysAgo = aLatest?.d ? Math.round((now - new Date(aLatest.d).getTime()) / 86400000) : 9999;
+    const bDaysAgo = bLatest?.d ? Math.round((now - new Date(bLatest.d).getTime()) / 86400000) : 9999;
 
-    const daysSince = lastFollow?.last
-      ? (Date.now() - new Date(lastFollow.last).getTime()) / 86400000
-      : Infinity;
+    const aExpired = aDaysAgo > CONFLICT_EXPIRE_DAYS;
+    const bExpired = bDaysAgo > CONFLICT_EXPIRE_DAYS;
 
-    if (daysSince <= 90) {
-      // First issuer followed up → gets the customer
+    // หาใครออกใบแรกก่อน
+    const aFirstDate = db.prepare(
+      "SELECT MIN(issue_date) AS d FROM quotations WHERE sales_user_id=? AND contact_name=?"
+    ).get(c.sales_a_id, c.contact_name) as { d: string | null };
+    const bFirstDate = db.prepare(
+      "SELECT MIN(issue_date) AS d FROM quotations WHERE sales_user_id=? AND contact_name=?"
+    ).get(c.sales_b_id, c.contact_name) as { d: string | null };
+    const aIssuedFirst = (aFirstDate?.d ?? "9999") <= (bFirstDate?.d ?? "9999");
+
+    let winner: string | null = null;
+    let loserName: string | null = null;
+    let winnerId: number, loserId: number;
+    let reason: string;
+
+    if (aExpired && bExpired) {
+      // ทั้งคู่หมดสิทธิ์ → รอ admin
+      continue;
+    } else if (aExpired && !bExpired) {
+      // A หมดสิทธิ์ → B ได้
+      winner = c.sales_b_name; loserName = c.sales_a_name;
+      winnerId = c.quot_b_id; loserId = c.quot_a_id;
+      reason = `${c.sales_a_name} ใบล่าสุด ${aDaysAgo} วันก่อน (>90 วัน หมดสิทธิ์) → ${c.sales_b_name} ได้สิทธิ์`;
+    } else if (!aExpired && bExpired) {
+      // B หมดสิทธิ์ → A ได้
+      winner = c.sales_a_name; loserName = c.sales_b_name;
+      winnerId = c.quot_a_id; loserId = c.quot_b_id;
+      reason = `${c.sales_b_name} ใบล่าสุด ${bDaysAgo} วันก่อน (>90 วัน หมดสิทธิ์) → ${c.sales_a_name} ได้สิทธิ์`;
+    } else {
+      // ทั้งคู่ยังตามอยู่ → คนออกก่อนได้
+      if (aIssuedFirst) {
+        winner = c.sales_a_name; loserName = c.sales_b_name;
+        winnerId = c.quot_a_id; loserId = c.quot_b_id;
+        reason = `ทั้งคู่ยังตามอยู่ — ${c.sales_a_name} ออกใบก่อน`;
+      } else {
+        winner = c.sales_b_name; loserName = c.sales_a_name;
+        winnerId = c.quot_b_id; loserId = c.quot_a_id;
+        reason = `ทั้งคู่ยังตามอยู่ — ${c.sales_b_name} ออกใบก่อน`;
+      }
+    }
+
+    try {
       db.prepare(
         "INSERT INTO conflict_resolutions (winner_quot_id, loser_quot_id, resolved_by, reason) VALUES (?,?,0,?)"
-      ).run(firstId, secondId, `ตัดสินอัตโนมัติ: ${firstName} ออกใบก่อน + follow-up ภายใน 90 วัน`);
+      ).run(winnerId, loserId, `ตัดสินอัตโนมัติ: ${reason}`);
+    } catch { continue; }
 
-      await lineMessage(
-        `⚖️ ตัดสินอัตโนมัติ: ลูกค้า "${c.contact_name}"\n✅ ${firstName} ได้สิทธิ์ (ออกใบก่อน + follow-up)\n❌ ${secondName} สิทธิ์หลุด`
-      );
-    } else if (daysSince > 90) {
-      // First issuer didn't follow up → second gets it
-      const secondFollow = db.prepare(
-        "SELECT MAX(followed_at) AS last FROM follow_ups WHERE quotation_id=?"
-      ).get(secondId) as { last: string | null };
-
-      const secondDays = secondFollow?.last
-        ? (Date.now() - new Date(secondFollow.last).getTime()) / 86400000
-        : Infinity;
-
-      if (secondDays <= 90) {
-        db.prepare(
-          "INSERT INTO conflict_resolutions (winner_quot_id, loser_quot_id, resolved_by, reason) VALUES (?,?,0,?)"
-        ).run(secondId, firstId, `ตัดสินอัตโนมัติ: ${firstName} ไม่ follow-up 90 วัน → สิทธิ์ตก ${secondName}`);
-
-        await lineMessage(
-          `⚖️ ตัดสินอัตโนมัติ: ลูกค้า "${c.contact_name}"\n✅ ${secondName} ได้สิทธิ์ (${firstName} ไม่ follow-up 90 วัน)\n❌ ${firstName} สิทธิ์หลุด`
-        );
-      }
-      // If both didn't follow up → leave unresolved for admin
-    }
+    await lineMessage(`⚖️ ตัดสินอัตโนมัติ: ลูกค้า "${c.contact_name}"\n✅ ${winner} ได้สิทธิ์\n❌ ${loserName} สิทธิ์หลุด\nเหตุผล: ${reason}`);
+    await notifySalesPerson(winner, `🎉 คุณได้สิทธิ์ลูกค้า "${c.contact_name}"\nเหตุผล: ${reason}`);
+    await notifySalesPerson(loserName, `❌ สิทธิ์ลูกค้า "${c.contact_name}" ตกไป ${winner}\nเหตุผล: ${reason}`);
   }
 }
 
@@ -209,6 +285,13 @@ async function notifyNewConflicts(db: ReturnType<typeof getDb>): Promise<void> {
     ...(newConflicts.length > 5 ? [`... และอีก ${newConflicts.length - 5} คู่`] : []),
   ];
   await lineMessage(lines.join("\n"));
+
+  // ส่งแจ้งเตือนรายคนให้ทั้งสองคนที่ชนกัน
+  for (const c of newConflicts) {
+    const msg = `⚠️ ลูกค้าชน: "${c.contact_name}"\nคุณชนกับ `;
+    await notifySalesPerson(c.sales_a_name, msg + c.sales_b_name + `\nใบ: ${c.quot_a_number} vs ${c.quot_b_number}`);
+    await notifySalesPerson(c.sales_b_name, msg + c.sales_a_name + `\nใบ: ${c.quot_b_number} vs ${c.quot_a_number}`);
+  }
 }
 
 // ── Notify quotations expiring within 7 days (90-day follow-up rule) ──
@@ -231,6 +314,7 @@ async function notifyExpiringQuotations(db: ReturnType<typeof getDb>): Promise<v
 
   if (expiring.length === 0) return;
 
+  // ส่งกลุ่ม
   const lines = [
     `🔔 ใบเสนอราคาใกล้หมด 90 วัน — ต้องตามลูกค้า!`,
     "",
@@ -239,4 +323,16 @@ async function notifyExpiringQuotations(db: ReturnType<typeof getDb>): Promise<v
     ),
   ];
   await lineMessage(lines.join("\n"));
+
+  // ส่งรายคนให้เซลล์ที่เกี่ยวข้อง
+  for (const q of expiring) {
+    const daysLeft = 90 - q.days_since;
+    await notifySalesPerson(q.sales_name,
+      `🔔 ใบเสนอราคาใกล้หมดอายุ!\n\n` +
+      `📄 ${q.document_number}\n` +
+      `👤 ${q.contact_name}\n` +
+      `⏰ เหลืออีก ${daysLeft} วัน\n\n` +
+      `กรุณาติดต่อลูกค้าด่วน!`
+    );
+  }
 }

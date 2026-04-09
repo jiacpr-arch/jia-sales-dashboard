@@ -81,6 +81,15 @@ export function initSchema(): void {
       registered_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
     );
 
+    -- ================ EXPIRY NOTIFICATIONS SENT ================
+    CREATE TABLE IF NOT EXISTS expiry_notifications_sent (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      quotation_id    INTEGER NOT NULL REFERENCES quotations(id),
+      notification_type TEXT NOT NULL,  -- '7day' or '1day'
+      sent_at         TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      UNIQUE(quotation_id, notification_type)
+    );
+
     -- ================ SYNC LOG ================
     CREATE TABLE IF NOT EXISTS sync_log (
       id        INTEGER PRIMARY KEY AUTOINCREMENT,

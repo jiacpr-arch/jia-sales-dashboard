@@ -5,8 +5,9 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import cron from "node-cron";
 import { initSchema } from "./services/database";
-import { syncQuotations } from "./services/flowaccount-sync";
+import { syncQuotations, autoResolveConflicts, notifyNewConflicts, notifyExpiringQuotations } from "./services/flowaccount-sync";
 import { sendDailyReport } from "./services/line-notify";
+import { getDb } from "./services/database";
 import authRoutes from "./routes/auth";
 import quotationRoutes from "./routes/quotations";
 import dashboardRoutes from "./routes/dashboard";
@@ -62,10 +63,16 @@ cron.schedule("0 7 * * *", async () => {
   await syncQuotations().catch(console.error);
 }, { timezone: "Asia/Bangkok" });
 
-// LINE Notify ทุกเช้า 08:00
+// LINE Notify ทุกเช้า 08:00 — daily report + conflict/expiry notifications
 cron.schedule("0 8 * * *", async () => {
-  console.log("[cron] Sending daily LINE report...");
+  console.log("[cron] Sending daily LINE report + notifications...");
   await sendDailyReport().catch(console.error);
+
+  // Send conflict & expiry notifications (after daily report)
+  const db = getDb();
+  await autoResolveConflicts(db, true).catch(console.error);  // resolve + notify
+  await notifyNewConflicts(db).catch(console.error);
+  await notifyExpiringQuotations(db).catch(console.error);
 }, { timezone: "Asia/Bangkok" });
 
 // ── Start server ──────────────────────────────────────────────────────────────

@@ -157,10 +157,8 @@ export async function syncQuotations(): Promise<{ added: number; updated: number
     db.prepare("INSERT INTO sync_log (status, records, message) VALUES (?,?,?)")
       .run("success", added + updated, `added=${added} updated=${updated}`);
 
-    // Auto-resolve conflicts + notify new conflicts
-    await autoResolveConflicts(db);
-    await notifyNewConflicts(db);
-    await notifyExpiringQuotations(db);
+    // Auto-resolve conflicts (DB changes only, no LINE notifications during sync)
+    await autoResolveConflicts(db, false);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     db.prepare("INSERT INTO sync_log (status, records, message) VALUES (?,?,?)")
@@ -177,7 +175,7 @@ export async function syncQuotations(): Promise<{ added: number; updated: number
 // 3. ถ้าทั้งคู่เกิน 90 วัน → รอ admin ตัดสิน
 const CONFLICT_EXPIRE_DAYS = 90; // 3 เดือน — ใบล่าสุดเกินนี้ถือว่าหมดสิทธิ์
 
-async function autoResolveConflicts(db: ReturnType<typeof getDb>): Promise<void> {
+export async function autoResolveConflicts(db: ReturnType<typeof getDb>, sendNotifications = true): Promise<void> {
   const conflicts = db.prepare("SELECT * FROM v_conflicts").all() as Array<{
     quot_a_id: number; quot_a_date: string; sales_a_id: number; sales_a_name: string;
     quot_b_id: number; quot_b_date: string; sales_b_id: number; sales_b_name: string;
@@ -252,14 +250,16 @@ async function autoResolveConflicts(db: ReturnType<typeof getDb>): Promise<void>
       ).run(winnerId, loserId, `ตัดสินอัตโนมัติ: ${reason}`);
     } catch { continue; }
 
-    await lineMessage(`⚖️ ตัดสินอัตโนมัติ: ลูกค้า "${c.contact_name}"\n✅ ${winner} ได้สิทธิ์\n❌ ${loserName} สิทธิ์หลุด\nเหตุผล: ${reason}`);
-    await notifySalesPerson(winner, `🎉 คุณได้สิทธิ์ลูกค้า "${c.contact_name}"\nเหตุผล: ${reason}`);
-    await notifySalesPerson(loserName, `❌ สิทธิ์ลูกค้า "${c.contact_name}" ตกไป ${winner}\nเหตุผล: ${reason}`);
+    if (sendNotifications) {
+      await lineMessage(`⚖️ ตัดสินอัตโนมัติ: ลูกค้า "${c.contact_name}"\n✅ ${winner} ได้สิทธิ์\n❌ ${loserName} สิทธิ์หลุด\nเหตุผล: ${reason}`);
+      await notifySalesPerson(winner, `🎉 คุณได้สิทธิ์ลูกค้า "${c.contact_name}"\nเหตุผล: ${reason}`);
+      await notifySalesPerson(loserName, `❌ สิทธิ์ลูกค้า "${c.contact_name}" ตกไป ${winner}\nเหตุผล: ${reason}`);
+    }
   }
 }
 
 // ── Notify new (unresolved) conflicts ──
-async function notifyNewConflicts(db: ReturnType<typeof getDb>): Promise<void> {
+export async function notifyNewConflicts(db: ReturnType<typeof getDb>): Promise<void> {
   const unresolved = db.prepare(`
     SELECT c.*,
       NOT EXISTS (
@@ -295,9 +295,11 @@ async function notifyNewConflicts(db: ReturnType<typeof getDb>): Promise<void> {
 }
 
 // ── Notify quotations expiring within 7 days (90-day follow-up rule) ──
-async function notifyExpiringQuotations(db: ReturnType<typeof getDb>): Promise<void> {
+// Checks expiry_notifications_sent to avoid duplicate alerts
+export async function notifyExpiringQuotations(db: ReturnType<typeof getDb>): Promise<void> {
   const expiring = db.prepare(`
-    SELECT q.document_number, q.contact_name, u.full_name AS sales_name,
+    SELECT q.id AS quotation_id, q.document_number, q.contact_name,
+      u.full_name AS sales_name,
       fu.followed_at AS last_follow,
       CAST(JULIANDAY('now','localtime') - JULIANDAY(fu.followed_at) AS INTEGER) AS days_since
     FROM quotations q
@@ -309,24 +311,39 @@ async function notifyExpiringQuotations(db: ReturnType<typeof getDb>): Promise<v
     WHERE fu.followed_at IS NOT NULL
       AND JULIANDAY('now','localtime') - JULIANDAY(fu.followed_at) BETWEEN 83 AND 90
   `).all() as Array<{
-    document_number: string; contact_name: string; sales_name: string; days_since: number;
+    quotation_id: number; document_number: string; contact_name: string;
+    sales_name: string; days_since: number;
   }>;
 
   if (expiring.length === 0) return;
+
+  // Filter out quotations that already received this notification type
+  const toNotify = expiring.filter(q => {
+    const daysLeft = 90 - q.days_since;
+    const notifType = daysLeft <= 1 ? "1day" : "7day";
+    const already = db.prepare(
+      "SELECT 1 FROM expiry_notifications_sent WHERE quotation_id = ? AND notification_type = ?"
+    ).get(q.quotation_id, notifType);
+    return !already;
+  });
+
+  if (toNotify.length === 0) return;
 
   // ส่งกลุ่ม
   const lines = [
     `🔔 ใบเสนอราคาใกล้หมด 90 วัน — ต้องตามลูกค้า!`,
     "",
-    ...expiring.map(q =>
+    ...toNotify.map(q =>
       `• ${q.document_number} — ${q.contact_name} (${q.sales_name}) เหลือ ${90 - q.days_since} วัน`
     ),
   ];
   await lineMessage(lines.join("\n"));
 
-  // ส่งรายคนให้เซลล์ที่เกี่ยวข้อง
-  for (const q of expiring) {
+  // ส่งรายคนให้เซลล์ที่เกี่ยวข้อง + record in dedup table
+  for (const q of toNotify) {
     const daysLeft = 90 - q.days_since;
+    const notifType = daysLeft <= 1 ? "1day" : "7day";
+
     await notifySalesPerson(q.sales_name,
       `🔔 ใบเสนอราคาใกล้หมดอายุ!\n\n` +
       `📄 ${q.document_number}\n` +
@@ -334,5 +351,12 @@ async function notifyExpiringQuotations(db: ReturnType<typeof getDb>): Promise<v
       `⏰ เหลืออีก ${daysLeft} วัน\n\n` +
       `กรุณาติดต่อลูกค้าด่วน!`
     );
+
+    // Mark as sent to prevent duplicate notifications
+    try {
+      db.prepare(
+        "INSERT OR IGNORE INTO expiry_notifications_sent (quotation_id, notification_type) VALUES (?, ?)"
+      ).run(q.quotation_id, notifType);
+    } catch { /* ignore duplicate */ }
   }
 }

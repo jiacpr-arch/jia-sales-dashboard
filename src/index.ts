@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import cron from "node-cron";
 import { initSchema } from "./services/database";
-import { syncQuotations, autoResolveConflicts, notifyNewConflicts, notifyExpiringQuotations } from "./services/flowaccount-sync";
+import { syncQuotations, autoResolveConflicts, notifyExpiringQuotations } from "./services/flowaccount-sync";
 import { sendDailyReport } from "./services/line-notify";
 import { getDb } from "./services/database";
 import authRoutes from "./routes/auth";
@@ -68,10 +68,8 @@ cron.schedule("0 8 * * *", async () => {
   console.log("[cron] Sending daily LINE report + notifications...");
   await sendDailyReport().catch(console.error);
 
-  // Send conflict & expiry notifications (after daily report)
   const db = getDb();
-  await autoResolveConflicts(db, true).catch(console.error);  // resolve + notify
-  await notifyNewConflicts(db).catch(console.error);
+  await autoResolveConflicts(db, false).catch(console.error);
   await notifyExpiringQuotations(db).catch(console.error);
 }, { timezone: "Asia/Bangkok" });
 

@@ -258,42 +258,6 @@ export async function autoResolveConflicts(db: ReturnType<typeof getDb>, sendNot
   }
 }
 
-// ── Notify new (unresolved) conflicts ──
-export async function notifyNewConflicts(db: ReturnType<typeof getDb>): Promise<void> {
-  const unresolved = db.prepare(`
-    SELECT c.*,
-      NOT EXISTS (
-        SELECT 1 FROM conflict_resolutions cr
-        WHERE (cr.winner_quot_id=c.quot_a_id AND cr.loser_quot_id=c.quot_b_id)
-           OR (cr.winner_quot_id=c.quot_b_id AND cr.loser_quot_id=c.quot_a_id)
-      ) AS is_new
-    FROM v_conflicts c
-  `).all() as Array<{
-    contact_name: string; sales_a_name: string; sales_b_name: string;
-    quot_a_number: string; quot_b_number: string; is_new: number;
-  }>;
-
-  const newConflicts = unresolved.filter(c => c.is_new);
-  if (newConflicts.length === 0) return;
-
-  const lines = [
-    `⚠️ พบลูกค้าชนกัน ${newConflicts.length} คู่ (รอตัดสิน)`,
-    "",
-    ...newConflicts.slice(0, 5).map(c =>
-      `• ${c.contact_name}: ${c.sales_a_name} vs ${c.sales_b_name}`
-    ),
-    ...(newConflicts.length > 5 ? [`... และอีก ${newConflicts.length - 5} คู่`] : []),
-  ];
-  await lineMessage(lines.join("\n"));
-
-  // ส่งแจ้งเตือนรายคนให้ทั้งสองคนที่ชนกัน
-  for (const c of newConflicts) {
-    const msg = `⚠️ ลูกค้าชน: "${c.contact_name}"\nคุณชนกับ `;
-    await notifySalesPerson(c.sales_a_name, msg + c.sales_b_name + `\nใบ: ${c.quot_a_number} vs ${c.quot_b_number}`);
-    await notifySalesPerson(c.sales_b_name, msg + c.sales_a_name + `\nใบ: ${c.quot_b_number} vs ${c.quot_a_number}`);
-  }
-}
-
 // ── Notify quotations expiring within 7 days (90-day follow-up rule) ──
 // Checks expiry_notifications_sent to avoid duplicate alerts
 export async function notifyExpiringQuotations(db: ReturnType<typeof getDb>): Promise<void> {

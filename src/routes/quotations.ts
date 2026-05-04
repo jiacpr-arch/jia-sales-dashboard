@@ -1,8 +1,6 @@
 import { Router, Request, Response } from "express";
 import { getDb, type Stmt as _Stmt } from "../services/database";
 import { requireAuth, requireAdmin, JwtPayload } from "../middleware/auth";
-import { syncQuotations } from "../services/flowaccount-sync";
-import { lineMessage } from "../services/line-notify";
 
 const router = Router();
 
@@ -162,20 +160,7 @@ router.put("/:id/stage", requireAuth, async (req: Request, res: Response) => {
   db.prepare("UPDATE quotations SET pipeline_stage=?, pipeline_updated_at=datetime('now','localtime'), updated_at=datetime('now','localtime') WHERE id=?")
     .run(stage, req.params.id);
 
-  // LINE notification when deal moves to 'won'
-  if (stage === 'won' && oldStage !== 'won') {
-    const fmtMoney = (n: number) => Number(n || 0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
-    const msg = [
-      `🎉 ปิดดีลสำเร็จ!`,
-      `📄 ${q.document_number}`,
-      `👤 ${q.contact_name}`,
-      `💰 ${fmtMoney(Number(q.total_amount))} บาท`,
-      `🧑‍💼 เซลล์: ${q.sales_name || '-'}`,
-      `📝 อัปเดตโดย: ${user.username}`,
-    ].join('\n');
-    lineMessage(msg).catch(console.error);
-  }
-
+  void oldStage;
   res.json({ ok: true, message: `อัปเดต pipeline เป็น "${stage}" เรียบร้อย` });
 });
 
@@ -193,14 +178,8 @@ router.get("/export/csv", requireAuth, (_req: Request, res: Response) => {
   res.send("\uFEFF" + csv); // BOM for Excel Thai
 });
 
-// ── Manual sync (admin only) ──────────────────────────────────────────────────
-router.post("/sync", requireAdmin, async (_req: Request, res: Response) => {
-  try {
-    const result = await syncQuotations();
-    res.json({ ok: true, ...result });
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
-  }
+router.post("/sync", requireAdmin, (_req: Request, res: Response) => {
+  res.status(503).json({ error: "Sync disabled — migration to jiaraksa-crm in progress" });
 });
 
 export default router;

@@ -55,51 +55,17 @@ function findLineUserId(salesName: string, records: SalesLineRecord[]): string |
 
 // ── Push message helpers ─────────────────────────────────────────────────────
 
-/** ส่งข้อความส่วนตัวผ่าน JiaRoo OA */
-export async function jiarooPush(userId: string, text: string): Promise<void> {
-  const token = JIAROO_TOKEN || CHANNEL_TOKEN;
-  if (!token || !userId) return;
-  try {
-    const res = await fetch("https://api.line.me/v2/bot/message/push", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ to: userId, messages: [{ type: "text", text }] }),
-    });
-    if (!res.ok) console.error("[JiaRoo] Push error:", res.status, await res.text());
-  } catch (err) {
-    console.error("[JiaRoo] Push failed:", err);
-  }
+// LINE push disabled — migration to jiaraksa-crm in progress
+export async function jiarooPush(_userId: string, _text: string): Promise<void> {
+  return;
 }
 
-/** ส่งข้อความไปยัง group (Pracmed) */
-export async function lineMessage(text: string): Promise<void> {
-  if (!CHANNEL_TOKEN || !TARGET_ID) {
-    console.log("[LINE] ยังไม่ได้ตั้งค่า — ข้ามการแจ้งเตือน");
-    return;
-  }
-  try {
-    const res = await fetch("https://api.line.me/v2/bot/message/push", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${CHANNEL_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ to: TARGET_ID, messages: [{ type: "text", text }] }),
-    });
-    if (!res.ok) console.error("[LINE] Push error:", res.status, await res.text());
-    else console.log("[LINE] ส่งข้อความกลุ่มสำเร็จ");
-  } catch (err) {
-    console.error("[LINE] Push failed:", err);
-  }
+export async function lineMessage(_text: string): Promise<void> {
+  return;
 }
 
-/** ส่งข้อความส่วนตัวให้เซลล์ตาม salesName */
-export async function notifySalesPerson(salesName: string, text: string): Promise<boolean> {
-  const records = await getSalesLineIds();
-  const userId = findLineUserId(salesName, records);
-  if (!userId) {
-    console.log(`[LINE] ไม่พบ LINE ID ของเซลล์: ${salesName}`);
-    return false;
-  }
-  await jiarooPush(userId, text);
-  return true;
+export async function notifySalesPerson(_salesName: string, _text: string): Promise<boolean> {
+  return false;
 }
 
 // ── Daily Report (ส่งกลุ่ม) ──────────────────────────────────────────────────
